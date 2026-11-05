@@ -74,7 +74,7 @@ class FreshInstall(Sandbox):
         for name in ("hamzaban-close", "hamzaban-continue", "infinite-context"):
             text = (eng / "skills-src" / name / "SKILL.md").read_text(encoding="utf-8")
             self.assertNotIn("{{", text)
-        self.assertIn(str(self.vault), (eng / "skills-src" / "infinite-context" / "SKILL.md").read_text(encoding="utf-8"))
+        self.assertIn(str(self.vault.resolve()), (eng / "skills-src" / "infinite-context" / "SKILL.md").read_text(encoding="utf-8"))
         # the installer waits 22 s for new files to settle before the sharing pass; here the wait is switched off, so let the
         # sync see files that are "old enough" (settle window 0) and run its next passes
         cfg_path = eng / "suite-skills.json"
