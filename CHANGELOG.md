@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+**Installing**
+- One-line installs from a terminal (PowerShell with or without git, macOS/Linux) in the README, and `AGENTS.md`: how Codex, Claude Code or another agent installs Hamzaban for a person (dry run first, their answers before any change, `--doctor` at the end), with a prompt to paste.
+
 **The application (Windows)**
 - Hamzaban has an identity now: an icon (`engine/assets`, drawn by `tools/make_icon.py`), a Start-menu entry and a desktop shortcut named *Hamzaban همزبان*, and its own window (`app_window.py`: Edge or Chrome in app mode with a profile of its own). The installer's new `shortcuts` step creates them (it asks first; `--skip shortcuts`), `python shortcuts.py install|status|remove` does it by hand, and `--uninstall` undoes it. Current user only, no administrator rights. `CONTROL-ROOM.cmd` opens the same window.
 - A **کجاست؟** ("where is it?") button on every chat, every part of a chat and every *now* entry: the application the chat took place in (the Claude app, Claude Code in a terminal, the Codex app, Codex in a terminal, Chat On Steroids, or the web service of a closing-block chat), the part of the chat (message numbers, time, a search phrase), the chat file and folder, and buttons that open the application, open Codex on that very chat (`codex://threads/<id>`), show the file in Explorer, open the folder or continue in a terminal. Only what is still on the disk gets a button; what is gone is said so, and a Codex log that has been packed into `.jsonl.zst` is found.

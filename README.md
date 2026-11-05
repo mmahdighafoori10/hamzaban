@@ -45,6 +45,34 @@ You need **Python 3.10 or newer** ([python.org](https://www.python.org/downloads
 sh install.sh
 ```
 
+**From a terminal**
+
+Windows (PowerShell):
+
+```powershell
+git clone https://github.com/mmahdighafoori10/hamzaban.git; cd hamzaban; python install.py
+```
+
+Without git (PowerShell):
+
+```powershell
+Invoke-WebRequest https://github.com/mmahdighafoori10/hamzaban/archive/refs/heads/main.zip -OutFile hamzaban.zip; Expand-Archive hamzaban.zip -DestinationPath .; cd hamzaban-main; python install.py
+```
+
+macOS / Linux:
+
+```bash
+git clone https://github.com/mmahdighafoori10/hamzaban.git && cd hamzaban && python3 install.py
+```
+
+**Let an agent install it** (Codex, Claude Code, ...): paste this into a new chat.
+
+```text
+Install Hamzaban for me from https://github.com/mmahdighafoori10/hamzaban. Clone it, read its AGENTS.md and follow it: show me the dry run first, ask me where my Vault should live and which steps I want, and only then install.
+```
+
+[AGENTS.md](AGENTS.md) tells the agent how: a dry run first, your answers before anything changes, a health check at the end. The agent will ask for permission to write outside its folder; that is expected.
+
 Useful options (the same on every system):
 
 ```text

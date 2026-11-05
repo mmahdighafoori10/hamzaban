@@ -34,6 +34,34 @@ Claude Code، Codex، ChatGPT، Gemini و بقیه هرکدام به شیوهٔ 
 
 **macOS و Linux** (آزمایشی): `./install.sh`
 
+**از ترمینال**
+
+ویندوز (PowerShell):
+
+```powershell
+git clone https://github.com/mmahdighafoori10/hamzaban.git; cd hamzaban; python install.py
+```
+
+بدون git (PowerShell):
+
+```powershell
+Invoke-WebRequest https://github.com/mmahdighafoori10/hamzaban/archive/refs/heads/main.zip -OutFile hamzaban.zip; Expand-Archive hamzaban.zip -DestinationPath .; cd hamzaban-main; python install.py
+```
+
+macOS و Linux:
+
+```bash
+git clone https://github.com/mmahdighafoori10/hamzaban.git && cd hamzaban && python3 install.py
+```
+
+**نصب با یک دستیار** (Codex، Claude Code و…): این متن را در یک چت تازه بچسبان.
+
+```text
+همزبان را از https://github.com/mmahdighafoori10/hamzaban برایم نصب کن. مخزن را clone کن، فایل AGENTS.md آن را بخوان و طبقش جلو برو: اول اجرای آزمایشی (dry run) را نشانم بده، بپرس Vault کجا باشد و کدام مرحله‌ها را می‌خواهم، و فقط بعد از آن نصب کن.
+```
+
+فایل [AGENTS.md](AGENTS.md) به دستیار می‌گوید چطور: اول اجرای آزمایشی، بعد پاسخ‌های تو، و در آخر بررسی سلامت. دستیار برای نوشتن بیرون از پوشهٔ خودش اجازه می‌خواهد؛ این طبیعی است.
+
 گزینه‌های مفید: `python install.py --dry-run` (فقط نشان بده، چیزی را عوض نکن) · `--vault مسیر` · `--yes` · `--skip hooks,schedule` · `--doctor` · `--uninstall` (کار پس‌زمینه، هوک‌ها و ثبت MCP را برمی‌دارد؛ یادداشت‌هایت دست نمی‌خورد).
 
 هر تغییر بیرون از Vault پیش از انجام پشتیبان می‌گیرد و در `<Vault>/.ai-memory/logs/install.log` ثبت می‌شود.
