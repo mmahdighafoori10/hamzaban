@@ -101,7 +101,7 @@ class FreshInstall(Sandbox):
         self.assertTrue((self.vault / "00-Dashboard" / "control-room.html").is_file())
         self.assertTrue((eng / "context-index.sqlite3").is_file())
         record = json.loads(install.record_path(self.home).read_text(encoding="utf-8"))
-        self.assertEqual(Path(record["vault"]), self.vault)
+        self.assertEqual(Path(record["vault"]).resolve(), self.vault.resolve())   # the OS may spell the temp dir differently
         self.assertIn("0 FAIL", out)
         self.assertNotIn("Traceback", out)
 

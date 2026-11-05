@@ -160,7 +160,7 @@ def check_vault(path: Path, h: Path) -> str | None:
     """Why this folder cannot be the Vault, or None."""
     if path.exists() and not path.is_dir():
         return "that path is a file"
-    if path.parent == path or path == h:
+    if path.parent == path or path == h or path == h.resolve():
         return "that is a drive root or your home folder: pick a dedicated folder"
     low = str(path).replace("\\", "/").lower().rstrip("/")
     for bad in ("c:/windows", "c:/program files", "c:/program files (x86)", "/usr", "/etc", "/bin", "/sbin", "/var", "/system", "/library"):
