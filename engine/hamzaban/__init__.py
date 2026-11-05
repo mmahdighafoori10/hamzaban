@@ -19,6 +19,7 @@ PACK_FORMAT = "hamzaban-pack"
 PACK_VERSION = 1
 CLOSE_MARKER = "hamzaban-close"
 CLOSE_VERSION = 1
+RULES_ONLY = "rules-only"  # topic.how of a pack that carries only the user's standing rules (see pack.rules_only)
 
 ENGINE = Path(__file__).resolve().parent.parent  # the .ai-memory folder
 if str(ENGINE) not in sys.path:

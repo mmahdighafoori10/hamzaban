@@ -88,10 +88,26 @@ python continuity.py parity --dir "C:\work\my-app" --strict # exit code 1 if som
 | `MISSING` | no such file |
 | `MIXED` | generated files come from different snapshots (different `_pack` ids) |
 
-To bring an agent's file in line: `python hamzaban/cli.py export --to <agent> --dir <folder>`. It never overwrites: next to an existing file it
-writes a `.hamzaban` sibling for you to compare. ChatGPT and Claude.ai keep their instructions in a web page that cannot be read from disk:
-paste the output of `python hamzaban/cli.py pack --to chatgpt` (or `--to claude-ai`) there. Writing into your own agent folders (`~/.claude`,
-`~/.codex`, `~/.gemini`) changes how every future session behaves, so do it on purpose.
+To bring a project's file in line: `python hamzaban/cli.py export --to <agent> --dir <project> --topic <name>`. It never overwrites: next to an
+existing file it writes a `.hamzaban` sibling for you to compare.
+
+**For your own agent folders use `--rules-only`.** A plain export carries one project's state (checkpoint, tasks, facts, last turns). Frozen into
+`~/.claude/CLAUDE.md`, that state would be read by every later session of every project. `--rules-only` writes only your standing rules, your
+preference notes and the memory tools: the same text for every project, and its id changes only when your rules do.
+
+```text
+python hamzaban/cli.py export --to claude-code --dir ~/.claude --rules-only    # creates ~/.claude/CLAUDE.md
+python hamzaban/cli.py export --to codex --dir ~/.codex --rules-only           # ~/.codex/AGENTS.hamzaban.md, next to your own AGENTS.md
+python hamzaban/cli.py export --to gemini --dir ~/.gemini --rules-only         # only if you use the Gemini CLI
+python hamzaban/cli.py pack --to chatgpt --rules-only                          # text to paste into ChatGPT's custom instructions
+```
+
+ChatGPT, Claude.ai and the Gemini apps keep their instructions in a web page that cannot be read from disk: paste the output of
+`pack --to chatgpt` (or `claude-ai`, `gemini`) `--rules-only` there. A file you wrote yourself (an existing `~/.codex/AGENTS.md`) is never
+changed: the generated copy sits beside it for you to merge. `parity --home` then prints `ONE LANGUAGE (home)` when every generated file comes
+from the same snapshot, and each file turns `STALE` when your rules change. Export never overwrites, so to refresh a generated file delete it
+first (it carries a `hamzaban-export` mark on its first line) and export again. Writing into `~/.claude`, `~/.codex` or `~/.gemini` changes
+how every future session behaves, so do it on purpose.
 
 ## Honest limits
 

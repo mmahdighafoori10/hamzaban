@@ -3,6 +3,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -18,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))      # test_hamzaban li
 
 import chats  # noqa: E402
 import continuity  # noqa: E402
-from hamzaban import cli as hz_cli, pack as packmod  # noqa: E402
+from hamzaban import adapters as adp, cli as hz_cli, pack as packmod, render as rnd  # noqa: E402
 from test_hamzaban import AWS, PENDING_CANARY, PRIVATE, EngineCopyBase, make_vault, snapshot, w  # noqa: E402
 
 NOW = "2026-11-05T12:00:00Z"
@@ -465,7 +466,7 @@ class ParityTests(ContinuityBase):
         self.generated(proj / "CLAUDE.md", pack_id="bbbbbbbbbbbbbbbb")
         res = continuity.parity(self.vault, project=proj)
         self.assertTrue(res["mixed"])
-        self.assertEqual(sorted(res["packs"]), ["aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbb"])
+        self.assertEqual(sorted(res["packs"]["project"]), ["aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbb"])
         code, out = self.run_main("parity", "--dir", str(proj), "--strict")
         self.assertEqual(code, 1)
         self.assertIn("MIXED", out)
@@ -512,6 +513,127 @@ class ParityTests(ContinuityBase):
         self.assertEqual(code, 0)
         self.assertNotIn(AWS, out)
         self.assertNotIn("secret-ish", out)
+
+
+class RulesOnlyTests(ContinuityBase):
+    """The same standing rules for every agent and every project: no project state in the text."""
+    PROJECT_TEXT = ("نوشتن تست", "اتصال هوک", "fact approved demo-topic", "fact unreviewed demo-topic", "گام بعدی gemini",
+                    "Alpha skill description", "چه کمکی می‌خواهی", "ساخت ابزار", "Nothing recorded yet")
+
+    def cli(self, *argv) -> tuple[int, str]:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = hz_cli.main(["--vault", str(self.vault), *argv])
+        return code, buf.getvalue()
+
+    def test_a_rules_only_pack_is_valid_and_carries_only_the_rules(self):
+        for topic in (None, "demo-topic"):
+            p = packmod.build(self.vault, topic)
+            before = json.dumps(p, sort_keys=True)
+            ro = packmod.rules_only(p)
+            self.assertEqual(json.dumps(p, sort_keys=True), before, "the source pack must not be changed")
+            self.assertEqual(packmod.validate(ro), [])
+            self.assertEqual(ro["harness"]["rules"], p["harness"]["rules"])
+            self.assertEqual(ro["harness"]["tools"], p["harness"]["tools"])
+            self.assertEqual(ro["user"], p["user"])
+            self.assertEqual(ro["state"], {"project": None, "checkpoint": None, "tasks": [], "facts": []})
+            self.assertEqual((ro["recent"], ro["harness"]["skills"], ro["harness"]["projects"]), ([], [], []))
+            self.assertEqual(ro["topic"]["how"], "rules-only")
+        self.assertTrue(packmod.build(self.vault, "demo-topic")["state"]["tasks"])          # the source did have state
+
+    def test_the_rules_only_id_follows_the_rules_and_nothing_else(self):
+        first = packmod.rules_only(packmod.build(self.vault, None))["id"]
+        self.assertEqual(packmod.rules_only(packmod.build(self.vault, "demo-topic"))["id"], first)
+        w(self.vault / "20-Checkpoints/session-claude-cccc3333/20200109T000000Z-3333.md",
+          "---\ntitle: c\nupdated: 2020-01-09T00:00:00Z\nsource: claude-code-hook\ntype: auto-checkpoint\n---\n\n# چک‌پوینت\n\n## کارهای باز (از TodoWrite)\n- کار تازه\n")
+        w(self.vault / "10-Facts/new2.md", "---\nid: new2\nstatus: active\nsensitivity: public-ok\napproved: 2020-01-10T00:00:00Z\ntags: [demo-topic]\n---\n\na newer fact\n")
+        self.assertEqual(packmod.rules_only(packmod.build(self.vault, None))["id"], first, "project activity must not make the file stale")
+        harness = self.vault / "00-Context/Harness.md"
+        harness.write_text(harness.read_text(encoding="utf-8").replace("Reply in simple Persian.", "Reply in plain Persian."), encoding="utf-8")
+        self.assertNotEqual(packmod.rules_only(packmod.build(self.vault, None))["id"], first)
+
+    def test_every_dialect_gets_the_rules_and_none_of_a_projects_state(self):
+        adapters, _ = adp.load(self.vault)
+        normal = rnd.render(packmod.build(self.vault, "demo-topic"), adapters["codex"])["text"]
+        for leaked in ("نوشتن تست", "fact approved demo-topic", "Alpha skill description"):
+            self.assertIn(leaked, normal, "control: a normal pack does carry it")
+        ro = packmod.rules_only(packmod.build(self.vault, "demo-topic"))
+        for name, adapter in adapters.items():
+            with self.subTest(dialect=name):
+                text = rnd.render(ro, adapter)["text"]
+                self.assertIn("Reply in simple Persian.", text)
+                self.assertIn("Check the real state of files before continuing.", text)
+                self.assertIn("گزارش‌ها فارسی و ساده باشد", text)                          # the preference notes stay
+                for leaked in self.PROJECT_TEXT:
+                    self.assertNotIn(leaked, text)
+                for secret in (PRIVATE, PENDING_CANARY, AWS):
+                    self.assertNotIn(secret, text)
+                if not adapter["style"].startswith("json"):
+                    self.assertIn("standing rules", text.lower())
+
+    def test_the_persian_wording_exists_too(self):
+        adapters, _ = adp.load(self.vault)
+        ro = packmod.rules_only(packmod.build(self.vault, None))
+        text = rnd.render(ro, adapters["codex"], lang="fa")["text"]
+        self.assertIn("همزبان: قواعد ثابت", text)
+        self.assertIn("وضعیت هیچ پروژه‌ای را ندارد", text)
+        self.assertNotIn("هنوز چیزی ثبت نشده", text)
+
+    def test_the_flag_cannot_be_combined_with_a_topic_or_a_session(self):
+        self.assertEqual(self.cli("pack", "--to", "codex", "--rules-only", "--topic", "demo-topic")[0], 2)
+        self.assertEqual(self.cli("export", "--to", "codex", "--dir", str(self.tmp), "--rules-only", "--session", "abcdef12")[0], 2)
+        self.assertEqual(self.cli("pack", "--to", "codex", "--rules-only")[0], 0)
+
+    def test_it_works_on_a_pack_file_from_another_machine_too(self):
+        path = self.tmp / "other.json"
+        path.write_text(packmod.dumps(packmod.build(self.vault, "demo-topic")), encoding="utf-8")
+        code, out = self.cli("pack", "--to", "codex", "--rules-only", "--from-pack", str(path))
+        self.assertEqual(code, 0)
+        self.assertIn("Reply in simple Persian.", out)
+        self.assertNotIn("نوشتن تست", out)
+
+    def test_the_agents_global_files_are_one_language_and_the_users_own_file_is_untouched(self):
+        for d in (".claude", ".codex", ".gemini"):
+            (self.home / d).mkdir()
+        own = self.home / ".codex" / "AGENTS.md"
+        own.write_text("# my own codex rules\n\n- be brief\n", encoding="utf-8")
+        own_bytes = own.read_bytes()
+        for target, d in (("claude-code", ".claude"), ("codex", ".codex"), ("gemini", ".gemini")):
+            code, out = self.cli("export", "--to", target, "--dir", str(self.home / d), "--rules-only")
+            self.assertEqual(code, 0, out)
+        self.assertEqual(own.read_bytes(), own_bytes, "export never overwrites")
+        self.assertTrue((self.home / ".claude" / "CLAUDE.md").is_file())
+        self.assertTrue((self.home / ".gemini" / "GEMINI.md").is_file())
+        self.assertTrue((self.home / ".codex" / "AGENTS.hamzaban.md").is_file())
+        res = continuity.parity(self.vault, home=True)
+        rows = {r["file"]: r for r in res["rows"]}
+        self.assertEqual(rows["~/.claude/CLAUDE.md"]["state"], "CURRENT")
+        self.assertEqual(rows["~/.gemini/GEMINI.md"]["state"], "CURRENT")
+        self.assertEqual(rows["~/.codex/AGENTS.hamzaban.md"]["state"], "CURRENT")
+        self.assertEqual(rows["~/.codex/AGENTS.md"]["state"], "OWN")
+        self.assertIn("a generated copy sits next to it: ~/.codex/AGENTS.hamzaban.md", rows["~/.codex/AGENTS.md"]["detail"])
+        one = {r["pack"] for r in rows.values() if r["state"] == "CURRENT"}
+        self.assertEqual(one, {packmod.rules_only(packmod.build(self.vault, None))["id"]})     # the xml file and the markdown ones, one snapshot
+        self.assertEqual(list(res["packs"]), ["home"])
+        self.assertFalse(res["mixed"])
+        code, out = self.run_main("parity", "--home", "--strict")
+        self.assertEqual(code, 0)
+        self.assertIn("ONE LANGUAGE (home)", out)
+        harness = self.vault / "00-Context/Harness.md"
+        harness.write_text(harness.read_text(encoding="utf-8").replace("Reply in simple Persian.", "Reply in plain Persian."), encoding="utf-8")
+        rows = {r["file"]: r for r in continuity.parity(self.vault, home=True)["rows"]}
+        self.assertEqual([rows[f]["state"] for f in ("~/.claude/CLAUDE.md", "~/.gemini/GEMINI.md", "~/.codex/AGENTS.hamzaban.md")], ["STALE"] * 3)
+        self.assertEqual(self.run_main("parity", "--home", "--strict")[0], 1)
+
+    def test_project_files_and_home_files_are_compared_within_their_own_group(self):
+        proj = self.tmp / "p"
+        proj.mkdir()
+        (self.home / ".claude").mkdir()
+        self.assertEqual(self.cli("export", "--to", "claude-code", "--dir", str(proj), "--topic", "demo-topic")[0], 0)
+        self.assertEqual(self.cli("export", "--to", "claude-code", "--dir", str(self.home / ".claude"), "--rules-only")[0], 0)
+        res = continuity.parity(self.vault, project=proj, home=True)
+        self.assertEqual(sorted(res["packs"]), ["home", "project"])
+        self.assertFalse(res["mixed"], "a project export and a rules-only export are different packs by design")
 
 
 class HygieneTests(unittest.TestCase):

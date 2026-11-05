@@ -7,6 +7,7 @@
 - A cut-off chat's handoff says why it stopped and when the usage window opens again. Chats and proposals from other projects are counted, never quoted. A file you edited is never overwritten (the fresh copy lands beside it as `<name>.generated.md`).
 - `continuity.py parity` / `hamzaban parity`: do `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` and the other harness files carry the user's rules? States `CURRENT`, `STALE`, `OWN`, `MISSING`, `MIXED`; `--home` checks the three agents' own folders; `--strict` for CI.
 - New skill `hamzaban-continuity`: how an agent completes and uses a package safely. Installed by the installer with the others.
+- `pack` and `export` take `--rules-only`: only the user's standing rules, preference notes and memory tools, no project state, so the same text can sit in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` or `~/.gemini/GEMINI.md` for every project. Its id changes only when the rules do. `parity --home` lists a generated copy next to the user's own file, reads the pack id of the xml dialect too, and compares ids within the project files and within the home files.
 
 ## 1.0.0 — first public release
 

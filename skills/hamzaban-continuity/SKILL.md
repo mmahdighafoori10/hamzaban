@@ -63,9 +63,11 @@ All agents should read the same standing rules, whatever their file is called. `
 | `MISSING` | no such file |
 | `MIXED` | generated files come from different snapshots: refresh the older ones |
 
-To bring a file in line: `python hamzaban/cli.py export --to <agent> --dir <folder>`. It never overwrites; next to an existing file it writes a `.hamzaban` sibling for the user to compare. ChatGPT and Claude.ai keep their instructions in a web page that cannot be read from disk: give the user `python hamzaban/cli.py pack --to chatgpt` (or `claude-ai`) to paste.
+To bring a project's file in line: `python hamzaban/cli.py export --to <agent> --dir <project folder> --topic <name>`. It never overwrites; next to an existing file it writes a `.hamzaban` sibling for the user to compare.
 
-**Ask the user first** before writing into their own agent folders (`~/.claude`, `~/.codex`, `~/.gemini`): those files change how every future session behaves.
+For the user's own agent folders (`~/.claude`, `~/.codex`, `~/.gemini`) always add `--rules-only`: without it the file would freeze one project's checkpoint, tasks and facts into every later session. `--rules-only` writes only the standing rules, the preference notes and the memory tools. ChatGPT, Claude.ai and the Gemini apps keep their instructions in a web page that cannot be read from disk: give the user `python hamzaban/cli.py pack --to chatgpt --rules-only` (or `claude-ai`, `gemini`) to paste.
+
+**Ask the user first** before writing into their own agent folders: those files change how every future session behaves.
 
 ## Do not
 

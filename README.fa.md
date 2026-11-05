@@ -43,7 +43,7 @@ Claude Code، Codex، ChatGPT، Gemini و بقیه هرکدام به شیوهٔ 
 - در چت تازهٔ Claude Code یا Codex بگو «ادامه بده از چت قبلی» یا «ادامه بده از CX-7K3QF».
 - اتاق کنترل: `00-Dashboard/control-room.html` (روی ویندوز `CONTROL-ROOM.cmd` در پوشهٔ `.ai-memory`).
 - پیشنهادها: `python .ai-memory/pending.py list` و سپس `approve <id>` یا `reject <id>`.
-- قابل‌انتقال‌کردن یک کار یا چت: به عامل بگو «پکیج انتقال برای این پروژه بساز» یا `python .ai-memory/hamzaban/cli.py continuity write --dir <پروژه>` را اجرا کن. هماهنگی فایل‌های دستور عامل‌ها: `python .ai-memory/hamzaban/cli.py parity --dir <پروژه> --home`.
+- قابل‌انتقال‌کردن یک کار یا چت: به عامل بگو «پکیج انتقال برای این پروژه بساز» یا `python .ai-memory/hamzaban/cli.py continuity write --dir <پروژه>` را اجرا کن. هماهنگی فایل‌های دستور عامل‌ها: `python .ai-memory/hamzaban/cli.py parity --dir <پروژه> --home`؛ و برای نوشتن همان قواعد در آن‌ها: `export --to <عامل> --dir <پوشه> --rules-only` (جزئیات: [docs/continuity.md](docs/continuity.md)).
 - بستن چت وب: به عامل بگو «جمع‌بندی برای حافظه»؛ یک بلوک `hamzaban-close` می‌نویسد. کپی کن و `HAMZABAN-CLOSE.cmd` را اجرا کن.
 - قواعدت: فایل `00-Context/Harness.md` را ویرایش کن.
 

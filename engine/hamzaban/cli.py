@@ -8,6 +8,7 @@
   python hamzaban/cli.py refresh [--force]                rebuild 50-Handoff/ (also done automatically)
   python hamzaban/cli.py ingest FILE|-                    read closing blocks from a chat export and stage them
   python hamzaban/cli.py export --to gemini --dir PROJECT write the agent's own file into a project (never overwrites)
+  python hamzaban/cli.py export --to claude-code --dir ~/.claude --rules-only   the same rules for every project: no project state
   python hamzaban/cli.py continuity write --dir PROJECT [--topic T] [--chat TAG]   a portable project-continuity/ package (7 files)
   python hamzaban/cli.py parity [--dir PROJECT] [--home]  do the agents' harness files (CLAUDE.md, AGENTS.md, GEMINI.md ...) agree?
   python hamzaban/cli.py status | check | init | install-skill
@@ -71,9 +72,11 @@ def cmd_targets(args) -> int:
 
 def _pack_for(args):
     vault = _vault(args)
-    if args.from_pack:
-        return packmod.load(args.from_pack)
-    return packmod.build(vault, args.topic, args.session)
+    rules_only = getattr(args, "rules_only", False)
+    if rules_only and (args.topic or args.session):
+        raise ValueError("--rules-only carries no project state, so it cannot be combined with --topic or --session")
+    pack = packmod.load(args.from_pack) if args.from_pack else packmod.build(vault, args.topic, args.session)
+    return packmod.rules_only(pack) if rules_only else pack
 
 
 def cmd_pack(args) -> int:
@@ -320,6 +323,8 @@ def main(argv=None) -> int:
     p.add_argument("--from-pack", dest="from_pack", help="re-render a pack.json instead of reading the Vault")
     p.add_argument("--lang", choices=["en", "fa"])
     p.add_argument("--max-chars", dest="max_chars", type=int)
+    p.add_argument("--rules-only", dest="rules_only", action="store_true",
+                   help="only the standing rules, preferences and memory tools, no project state (for text that is not about one project)")
     p.add_argument("--out", help="plain file name, written under 50-Handoff/manual/")
     p = sub.add_parser("refresh", help="rebuild 50-Handoff/")
     p.add_argument("--force", action="store_true")
@@ -333,6 +338,8 @@ def main(argv=None) -> int:
     p.add_argument("--from-pack", dest="from_pack")
     p.add_argument("--lang", choices=["en", "fa"])
     p.add_argument("--max-chars", dest="max_chars", type=int)
+    p.add_argument("--rules-only", dest="rules_only", action="store_true",
+                   help="only the standing rules, preferences and memory tools: use it for files outside any one project (~/.claude, ~/.codex, ~/.gemini)")
     p = sub.add_parser("continuity", help="write a portable project-continuity/ package for a project or a chat (write --dir ...)")
     p.add_argument("rest", nargs=argparse.REMAINDER)
     p = sub.add_parser("parity", help="do the agents' harness files agree with your rules? (--dir PROJECT and/or --home)")

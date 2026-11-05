@@ -17,7 +17,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import CLOSE_MARKER, CLOSE_VERSION, PACK_FORMAT, PACK_VERSION, VERSION
+from . import CLOSE_MARKER, CLOSE_VERSION, PACK_FORMAT, PACK_VERSION, RULES_ONLY, VERSION
 
 import handoff  # engine module (path is set up in hamzaban/__init__.py)
 
@@ -495,6 +495,24 @@ def build(vault, topic: str | None = None, session: str | None = None, generated
     pack["languages"]["content"] = langs
     pack["id"] = digest(pack)
     return pack
+
+
+def rules_only(pack: dict) -> dict:
+    """Only what stays true in every project: the user's standing rules, preference notes and the memory tools.
+
+    No project note, checkpoint, tasks, facts, last turns, skills or project instruction files, so a file made from it
+    (~/.claude/CLAUDE.md, ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md, a chat's custom instructions) never freezes one project's
+    state into every later session. The id is recomputed and depends on the rules, the preferences and the tools only."""
+    out = json.loads(json.dumps(pack))
+    out["topic"] = {"name": "standing rules", "resolved": "rules", "how": RULES_ONLY}
+    out["source"] = {"agent": "any", "session": "", "conversation": "", "checkpoint": ""}
+    out["state"] = {"project": None, "checkpoint": None, "tasks": [], "facts": []}
+    out["recent"] = []
+    out["harness"]["skills"] = []
+    out["harness"]["projects"] = []
+    out["languages"] = {"pivot": "en", "content": languages_of(" ".join(r["text"] for r in out["harness"]["rules"]))}
+    out["id"] = digest(out)
+    return out
 
 
 # ---------------------------------------------------------------- identity, validation, external packs

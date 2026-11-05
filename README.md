@@ -72,7 +72,7 @@ Every change outside the Vault is backed up first and logged to `<Vault>/.ai-mem
 - **Start a new chat** in Claude Code or Codex and say *"continue from my last chat"*, or *"continue from CX-7K3QF"* (a tag from the control room).
 - **Open the control room**: `00-Dashboard/control-room.html` in your Vault (on Windows: `CONTROL-ROOM.cmd` in `.ai-memory`). Each chat card has a *copy "continue" command* button.
 - **Review proposals**: `python .ai-memory/pending.py list`, then `approve <id>` or `reject <id>`. Facts, decisions, the agents' own memories and closing blocks all wait here.
-- **Make a work or a chat transferable**: ask an agent *"make a continuity package for this project"*, or run `python .ai-memory/hamzaban/cli.py continuity write --dir <project>`. Check that your agents' instruction files agree with `python .ai-memory/hamzaban/cli.py parity --dir <project> --home`.
+- **Make a work or a chat transferable**: ask an agent *"make a continuity package for this project"*, or run `python .ai-memory/hamzaban/cli.py continuity write --dir <project>`. Check that your agents' instruction files agree with `python .ai-memory/hamzaban/cli.py parity --dir <project> --home`, and write the same rules into them with `export --to <agent> --dir <folder> --rules-only` (see [docs/continuity.md](docs/continuity.md)).
 - **Close a web chat**: ask the agent *"wrap up for memory"*; it writes one `hamzaban-close` block. Copy it and run `HAMZABAN-CLOSE.cmd` (Windows, reads the clipboard) or `python .ai-memory/hamzaban/cli.py ingest <file>`.
 - **Your rules**: edit `00-Context/Harness.md`. Every agent that reads a pack gets them as *your* instructions; everything else it reads is labelled reference data.
 

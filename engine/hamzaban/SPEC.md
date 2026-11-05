@@ -158,7 +158,15 @@ repository without being ignored. With no `--dir` the package goes to `50-Handof
 itself (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md`, `.cursor/rules/hamzaban.mdc`, and with `--home` the
 user's `~/.claude`, `~/.codex`, `~/.gemini` ones) it reports `CURRENT` (generated, every standing rule present), `STALE`, `OWN`
 (written by someone else, with how many rules appear verbatim) or `MISSING`, and `MIXED` when generated files carry different `_pack`
-ids. ChatGPT and Claude.ai keep their instructions in a web page and cannot be read from disk.
+ids (compared within the project files and within the home files). ChatGPT and Claude.ai keep their instructions in a web page and cannot be read
+from disk.
+
+`--rules-only` (on `pack` and `export`, `pack.rules_only(pack)`) is how the same text reaches files that belong to no project
+(`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.gemini/GEMINI.md`, a chat's custom instructions). It keeps the user's standing rules,
+preference notes and the memory tools, and empties project note, checkpoint, tasks, facts, last turns, skills and project instruction
+files. `topic.how` is `rules-only`, `source.agent` is `any`, and the id is recomputed, so it changes only when the rules, preferences or
+tools do. The renderers then use their "standing rules" title and introduction and print no "nothing recorded" notice. It cannot be combined
+with `--topic` or `--session`.
 
 ## 5. Guarantees and limits
 
