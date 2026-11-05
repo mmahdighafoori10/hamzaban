@@ -19,7 +19,7 @@ The `shortcuts` step of `python install.py` asks first (`--skip shortcuts` leave
 Both shortcuts start `hamzaban_app.pyw` through `pythonw`, so no console window flashes. It rebuilds the control room page when that is older than ten minutes and opens it in Microsoft
 Edge (or Chrome) as an application window: no tabs, no address bar, and a browser profile of its own (`%LOCALAPPDATA%\Hamzaban\app-profile`), so closing it never touches your everyday
 browser. With neither browser installed the page opens in your default browser instead; `HAMZABAN_BROWSER` can name a browser executable explicitly. The page reloads itself every minute,
-except while a panel is open.
+except while a panel is open. `CONTROL-ROOM.cmd` in the `.ai-memory` folder opens the same window.
 
 Without the installer, from the Vault's `.ai-memory` folder:
 
