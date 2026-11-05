@@ -10,6 +10,7 @@ settings, skills or notes. Logs are shown as metadata only (time, event kind, du
 """
 from __future__ import annotations
 
+import base64
 import html
 import json
 import os
@@ -19,6 +20,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import suite
+
+try:
+    import app_links
+except Exception:  # the page must still be built when that module has a problem: it only adds the "where is it?" panel
+    app_links = None
 
 PAGE_NAME = "control-room.html"
 REFRESH_SECONDS = 60
@@ -44,6 +50,14 @@ CHECK_FA = {
 ROOT_FA = {"src": "منبع مشترک", "agents": "Codex (.agents)", "codex": "Codex (.codex)",
            "claude": "Claude", "cos": "Chat On Steroids"}
 _DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
+# The mark of the app (assets/hamzaban.svg drawn small): two voices, and the language they share where they overlap.
+MARK = ('<svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="hzm-bg" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0" stop-color="#3b378f"/><stop offset="1" stop-color="#1c1a5e"/></linearGradient>'
+        '<clipPath id="hzm-l"><circle cx="192" cy="232" r="128"/></clipPath></defs>'
+        '<rect width="512" height="512" rx="120" fill="url(#hzm-bg)"/><path d="M128 343 L84 412 L225 356 Z" fill="#22c7b8"/>'
+        '<circle cx="192" cy="232" r="128" fill="#22c7b8"/><path d="M384 343 L428 412 L287 356 Z" fill="#ffb347"/>'
+        '<circle cx="320" cy="232" r="128" fill="#ffb347"/><circle cx="320" cy="232" r="128" fill="#fffdf5" clip-path="url(#hzm-l)"/></svg>')
+FAVICON = "data:image/svg+xml;base64," + base64.b64encode(MARK.replace('<svg class="mark"', '<svg xmlns="http://www.w3.org/2000/svg"').encode("utf-8")).decode("ascii")
 
 
 def fa(value) -> str:
@@ -348,7 +362,7 @@ def render(ctx: dict) -> str:
     snap = _chat_snapshot()
     cut = snap.get("counts", {}).get("interrupted", 0)
     return PAGE.format(
-        css=CSS, app_css=CSS_APP, js=JS, banner=banner, glyph=GLYPH[banner], head=esc(head), stamp=esc(fa(stamp)),
+        css=CSS, app_css=CSS_APP, js=JS, mark=MARK, favicon=FAVICON, banner=banner, glyph=GLYPH[banner], head=esc(head), stamp=esc(fa(stamp)),
         chat_badge=(f'<span class="n" title="چت نیمه‌کاره">{fa(cut)}</span>' if cut else ""),
         chats=chats_html(snap), skills=skills_html(_skills_matrix()), flow=flow)
 
@@ -401,6 +415,8 @@ STATE_BADGE = {"interrupted": "▲", "active": "●", "idle": "○", "closed": "
 
 def _topic_li(t: dict) -> str:
     btns = [f'<button class="btn" data-copy="ادامه بده از {esc(t["tag"])}">کپی دستور ادامه</button>']
+    if app_links is not None:
+        btns.append(f'<button class="btn" data-where="{esc(t["tag"].split("/")[0])}" data-where-topic="{esc(t.get("n", ""))}">کجاست؟</button>')
     if t.get("resume"):
         btns.append(f'<button class="btn" data-copy-id="r-{esc(t["tag"].replace("/", "-"))}">کپی متن ادامهٔ این موضوع</button>'
                     f'<script type="text/plain" id="r-{esc(t["tag"].replace("/", "-"))}">{_script_text(t["resume"])}</script>')
@@ -431,7 +447,10 @@ def cut_line(c: dict) -> str:
 
 def _now_item(c: dict, extra: str, button: bool) -> str:
     tag = esc(c["tag"])
-    btn = (f'<div class="btns"><button class="btn" data-copy="{esc(c["phrase"])}">کپی دستور ادامه</button></div>' if button else "")
+    buttons = (f'<button class="btn" data-copy="{esc(c["phrase"])}">کپی دستور ادامه</button>' if button else "")
+    if app_links is not None:
+        buttons += f'<button class="btn" data-where="{tag}">کجاست؟</button>'
+    btn = f'<div class="btns">{buttons}</div>' if buttons else ""
     return (f'<li><div class="row"><button class="tag" data-copy="{tag}" title="کپی تگ چت">{tag}</button>'
             f'<a class="t" href="#c-{tag}" data-goto="c-{tag}">{_bidi(c["title"][:70])}</a><small>{esc(c["agent_fa"])}</small></div>{extra}{btn}</li>')
 
@@ -459,6 +478,68 @@ def now_band(chats_list: list[dict]) -> str:
         + '</div></div><p class="meta">چند چت می‌توانند همزمان فعال باشند (مثلاً Claude و Codex هر دو باز و در حال کار). برنامه فقط لاگ خودِ ایجنت‌ها را '
           'می‌خواند، پس نمی‌داند کدام پنجره جلوی چشم توست؛ ولی می‌داند هر چت کِی آخرین بار نوشته شده و کدام را خودِ ایجنت '
           '(با خطای سقف مصرف یا توقف) نیمه‌کاره گذاشته است.</p></section>')
+
+
+def _span(first: str, last: str) -> str:
+    return (f'از <bdi dir="ltr">{esc(_clock(first))}</bdi> تا <bdi dir="ltr">{esc(_clock(last))}</bdi>') if first and last else ""
+
+
+def _part_li(c: dict, t: dict) -> str:
+    """One part (topic) of a chat: where to look for it inside the application."""
+    nums = ""
+    if t.get("from_n"):
+        total = c.get("turns") or 0
+        nums = (f'پیام‌های شمارهٔ {fa(t["from_n"])} تا {fa(t["to_n"])}' if t["to_n"] != t["from_n"] else f'پیام شمارهٔ {fa(t["from_n"])}') + \
+               (f' از {fa(total)} پیامِ تو' if total else "")
+    when = _span(t.get("first_ts", ""), t.get("last_ts", ""))
+    phrase = app_links.search_phrase(t.get("first_user", ""))
+    return (f'<li id="wt-{esc(c["tag"])}-{esc(t["n"])}"><div class="row"><button class="tag sub" data-copy="{esc(t["tag"])}" title="کپی زیرتگ">{esc(t["tag"])}</button>'
+            f'<span class="t">{esc(t["title"])}</span></div>'
+            + (f'<small>{nums}{" · " if nums and when else ""}{when}</small>' if nums or when else "")
+            + (f'<small>اولین درخواست در این بخش: {esc(t["first_user"][:160])}</small>' if t.get("first_user") else "")
+            + (f'<small>آخرین نتیجهٔ این بخش: {esc(t["last_assistant"][:160])}</small>' if t.get("last_assistant") else "")
+            + (f'<div class="btns"><button class="btn" data-copy="{esc(phrase)}">کپی عبارت جست‌وجو</button>'
+               f'<small>در برنامه Ctrl+F بزن و این را بچسبان: <bdi dir="ltr">«{esc(phrase)}»</bdi></small></div>' if phrase else "")
+            + "</li>")
+
+
+def where_html(c: dict) -> str:
+    """The body of the "where is it?" panel of one chat: the application, the exact part, the files, and the buttons that take you there."""
+    if app_links is None:
+        return ""
+    w = app_links.where(c)
+    head = f'<div class="wapp"><div><b>{esc(w["app_fa"])}</b>'
+    if w["entry"]:
+        head += f'<small>ورودی ثبت‌شده در لاگ: <bdi dir="ltr">{esc(w["entry"])}</bdi></small>'
+    head += "</div>"
+    if w["primary"]:
+        head += f'<a class="btn{" primary" if w["primary"]["exact"] else ""}" href="{esc(w["primary"]["href"])}">{esc(w["primary"]["label"])}</a>'
+    head += "</div>"
+    out = [head, f'<p class="meta">{esc(w["note"])}</p>' if w["note"] else ""]
+    rows = [("عنوان چت", f'{_bidi(c["title"])}'), ("زمان", _span(c.get("first_ts", ""), c.get("last_ts", "")) or "—")]
+    if c.get("cwd"):
+        rows.append(("پوشهٔ کار", f'<bdi dir="ltr">{esc(c["cwd"])}</bdi> <button class="btn" data-copy="{esc(c["cwd"])}">کپی</button>'
+                     + (f' <a class="btn" href="{esc(w["folder_href"])}">باز کردن پوشه</a>' if w["folder_href"] else "")))
+    if c.get("path"):
+        rows.append(("فایل چت", f'<bdi dir="ltr">{esc(c["path"])}</bdi> <button class="btn" data-copy="{esc(c["path"])}">کپی</button>'
+                     + (f' <a class="btn" href="{esc(w["reveal_href"])}">نمایش در Explorer</a>' if w["reveal"] and w["reveal_href"] else "")))
+    if c.get("source_id"):
+        rows.append(("شناسهٔ چت", f'<bdi dir="ltr">{esc(c["source_id"])}</bdi> <button class="btn" data-copy="{esc(c["source_id"])}">کپی</button>'))
+    out.append('<dl class="wl">' + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in rows) + "</dl>")
+    if w["resume"]:
+        r = w["resume"]
+        out.append(f'<p class="meta">ادامه در ترمینال: <code>{esc(r["cmd"])}</code> <button class="btn" data-copy="{esc(r["cmd"])}">کپی</button>'
+                   + (f' <a class="btn" href="{esc(r["href"])}">باز کردن در ترمینال</a>' if r["available"] and r["href"] else "") + "</p>")
+    topics = c.get("topics") or []
+    out.append("<h3>کدام بخش از چت؟</h3>")
+    if topics:
+        out.append('<ol class="wparts">' + "".join(_part_li(c, t) for t in topics) + "</ol>")
+        out.append('<p class="meta">برنامه‌ها به پیامِ دقیق نمی‌پرند؛ شمارهٔ پیام و عبارت جست‌وجو نشانی‌اند که بتوانی بخش را در خودِ چت پیدا کنی.</p>')
+    else:
+        out.append('<p class="meta">این چت موضوع‌بندی نشده؛ از زمان‌های بالا و آخرین درخواست در کارت چت استفاده کن.</p>')
+    out.append('<p class="meta">دکمه‌های «باز کردن» و «نمایش» با لینکِ <code>hamzaban:</code> کار می‌کنند؛ اگر چیزی باز نشد، یک‌بار '
+               '<code>python shortcuts.py install</code> را در پوشهٔ .ai-memory اجرا کن.</p>')
+    return "".join(out)
 
 
 def chat_card(c: dict) -> str:
@@ -493,8 +574,12 @@ def chat_card(c: dict) -> str:
     if c.get("resume"):
         btns.append(f'<button class="btn" data-copy-id="{esc(resume_id)}">کپی متن کامل ادامه</button>'
                     f'<script type="text/plain" id="{esc(resume_id)}">{_script_text(c["resume"])}</script>')
+    if app_links is not None:
+        btns.append(f'<button class="btn where" data-where="{esc(c["tag"])}">کجاست؟</button>')
     btns.append(f'<a class="btn" href="{link}">باز کردن در Obsidian</a>')
     parts.append(f'<div class="btns">{"".join(btns)}</div>')
+    if app_links is not None:
+        parts.append(f'<template id="w-{esc(c["tag"])}">{where_html(c)}</template>')
     if topics:
         parts.append(f'<details class="topics"><summary>{fa(len(topics))} موضوع (هر کدام زیرتگ دارد)</summary><ol>'
                      + "".join(_topic_li(t) for t in topics) + "</ol></details>")
@@ -597,10 +682,11 @@ def write(dest_dir: Path, ctx: dict) -> Path:
 CSS = """
 :root{--bg:#f6f4ef;--panel:#fff;--ink:#1d2430;--mute:#6a7482;--line:#e3dfd5;
 --ok:#177a4c;--okb:#e4f4ea;--warn:#9a5b00;--warnb:#fdf0d6;--fail:#b42a2a;--failb:#fbe4e4;--unk:#5d6877;--unkb:#e9ecf0;
---accent:#2d4a7a}
+--accent:#3d3a9e}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#14171c;--panel:#1d222a;--ink:#e8ebf0;--mute:#98a2b0;--line:#2c333d;
---ok:#59d08c;--okb:#173a28;--warn:#f0b24a;--warnb:#3b2d10;--fail:#ff7b7b;--failb:#431c1c;--unk:#9aa5b5;--unkb:#262d37;--accent:#8fb0e8}}
+--ok:#59d08c;--okb:#173a28;--warn:#f0b24a;--warnb:#3b2d10;--fail:#ff7b7b;--failb:#431c1c;--unk:#9aa5b5;--unkb:#262d37;--accent:#a9a7ff}}
 *{box-sizing:border-box}
+:root{color-scheme:light dark}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 "Dana","Vazirmatn","Segoe UI",Tahoma,sans-serif}
 .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 48px}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
@@ -779,6 +865,27 @@ CSS_APP = """
 .toast.on{opacity:.95}
 .empty{padding:22px;text-align:center;color:var(--mute)}
 @media (max-width:640px){.skt th:nth-child(4),.skt td:nth-child(4){display:none}}
+.brand{display:flex;align-items:center;gap:14px}
+.brand .mark{width:52px;height:52px;flex:none;border-radius:14px}
+.brand h1{font-size:24px;letter-spacing:.2px}
+.tagline{color:var(--mute);font-size:13px}
+.btn.primary{background:var(--accent);color:var(--panel);font-weight:700}
+.btn.primary:hover{filter:brightness(1.1)}
+dialog{border:1px solid var(--line);border-radius:16px;padding:0;background:var(--panel);color:var(--ink);width:min(760px,94vw);max-height:90vh;box-shadow:0 18px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(14,13,48,.55)}
+.dlghead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.dlghead h2{margin:0;flex:1;font-size:16px}
+#where-body{padding:10px 16px 16px;overflow:auto;max-height:calc(90vh - 62px)}
+#where-body h3{margin:16px 0 4px;font-size:15px}
+.wapp{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:var(--unkb)}
+.wapp b{font-size:16px}.wapp small{display:block;color:var(--mute)}
+.wl{display:grid;grid-template-columns:max-content 1fr;gap:8px 16px;margin:12px 0;font-size:14px}
+.wl dt{color:var(--mute)}.wl dd{margin:0;overflow-wrap:anywhere}
+.wparts{list-style:none;margin:6px 0 0;padding:0}
+.wparts li{border-top:1px solid var(--line);padding:9px 0;display:grid;gap:3px}
+.wparts li.flash{outline:3px solid var(--accent);outline-offset:2px;border-radius:8px}
+.wparts .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.wparts .t{flex:1;min-width:160px;font-weight:600}
+.wparts small{display:block;line-height:1.7;overflow-wrap:anywhere}
 """
 
 JS = r"""
@@ -898,13 +1005,33 @@ JS = r"""
                     function () { toast('کپی نشد؛ متن را دستی انتخاب کن'); });
   });
 
+  /* ---- "where is it?": the application, the part of the chat, the files */
+  var dlg = $('#where-dlg');
+  function closeWhere() { if (dlg && dlg.open) { if (dlg.close) { dlg.close(); } else { dlg.removeAttribute('open'); } } }
+  function openWhere(tag, topic) {
+    var tpl = document.getElementById('w-' + tag);
+    if (!dlg || !tpl) { return; }
+    $('#where-body').innerHTML = tpl.innerHTML;
+    $('#where-title').textContent = 'کجاست؟ ' + tag;
+    if (dlg.showModal) { dlg.showModal(); } else { dlg.setAttribute('open', ''); }
+    if (topic) {
+      var li = document.getElementById('wt-' + tag + '-' + topic);
+      if (li) { li.classList.add('flash'); li.scrollIntoView({ block: 'center' }); }
+    }
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target, b = t.closest ? t.closest('[data-where]') : null;
+    if (b) { openWhere(b.getAttribute('data-where'), b.getAttribute('data-where-topic')); return; }
+    if (dlg && dlg.open && (t === dlg || (t.closest && t.closest('[data-close]')))) { closeWhere(); }
+  });
+
   /* ---- keep the page fresh without losing what the person was doing */
   window.addEventListener('beforeunload', function () { store.set('cr-scroll', String(window.pageYOffset || 0)); });
   show((location.hash || '').slice(1) || store.get('cr-tab') || 'chats');
   var y = parseInt(store.get('cr-scroll') || '0', 10); if (y) { window.scrollTo(0, y); }
   setInterval(function () {
     var a = document.activeElement;
-    if (document.hidden || (a && /INPUT|TEXTAREA/.test(a.tagName)) || String(window.getSelection ? window.getSelection() : '') || $('.chat details[open]')) { return; }
+    if (document.hidden || (a && /INPUT|TEXTAREA/.test(a.tagName)) || String(window.getSelection ? window.getSelection() : '') || $('.chat details[open]') || $('dialog[open]')) { return; }
     location.reload();
   }, 60000);
 })();
@@ -915,14 +1042,15 @@ PAGE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>اتاق کنترل حافظه</title>
+<title>همزبان · اتاق کنترل</title>
+<link rel="icon" type="image/svg+xml" href="{favicon}">
 <style>{css}{app_css}</style>
 <noscript><style>[role=tabpanel][hidden]{{display:block!important}}</style></noscript>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <div><h1>اتاق کنترل حافظه</h1><div class="stamp">آخرین به‌روزرسانی: <bdi dir="ltr">{stamp}</bdi> · هر ۶۰ ثانیه خودکار تازه می‌شود · همه‌چیز محلی است</div></div>
+  <div class="brand">{mark}<div><h1>همزبان</h1><div class="tagline">اتاق کنترل حافظهٔ مشترک عامل‌ها</div><div class="stamp">آخرین به‌روزرسانی: <bdi dir="ltr">{stamp}</bdi> · هر ۶۰ ثانیه خودکار تازه می‌شود · همه‌چیز محلی است</div></div></div>
   <div class="banner {banner}"><span>{glyph}</span><span>{head}</span></div>
 </header>
 <nav class="tabs" role="tablist" aria-label="بخش‌های اتاق کنترل">
@@ -937,6 +1065,7 @@ PAGE = """<!doctype html>
 </main>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<dialog id="where-dlg" aria-labelledby="where-title"><div class="dlghead"><h2 id="where-title">کجاست؟</h2><button class="btn" data-close type="button">بستن ✕</button></div><div id="where-body"></div></dialog>
 <script>{js}</script>
 </body>
 </html>

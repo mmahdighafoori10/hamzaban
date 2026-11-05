@@ -38,7 +38,8 @@ plain files. Nothing talks to a network.
 | **MCP server** (`infinity_mcp.py`) | Read-only tools for agents: `memory_search`, `memory_read`, `memory_context`, `memory_chats`, `memory_handoff`, and `memory_propose` (which only stages a proposal). |
 | **Native memory import** (`native_memory.py`) | Turns the notes Claude Code keeps for itself and Codex's extracted memories into proposals. |
 | **Skill sync** (`autosync.py`, `suite.py`) | Keeps skills in step between agents' skill folders and `skills-src`. Never deletes; a skill that differs in two places becomes a note, not an overwrite. |
-| **Control room** (`control_room.py`) | Generates `00-Dashboard/control-room.html`: chats and tags, skills matrix, memory path. |
+| **Control room** (`control_room.py`) | Generates `00-Dashboard/control-room.html`: chats and tags, skills matrix, memory path, and for every chat a *where is it?* panel. |
+| **Application** (`app_window.py`, `app_links.py`, `shortcuts.py`) | Windows: the icon, the Start-menu entry and the desktop shortcut, the control room as its own window, and the `hamzaban:` link behind the *where is it?* buttons. See [app.md](app.md). |
 | **Doctor** (`suite.py doctor`) | Nine checks, always exit code 0: capture, hooks, registrations, skills, index, queue, autosync. |
 
 ## How a chat is classified

@@ -9,7 +9,7 @@ usage limit or a closed window is never lost: open any agent and say *"continue 
 
 There is no server, no account and no network code. Python standard library only. Everything stays in a folder you can read, edit and delete.
 
-[فارسی](README.fa.md) · [How it works](docs/how-it-works.md) · [Agents](docs/agents.md) · [Continuity](docs/continuity.md) · [Privacy](docs/privacy.md) · [Troubleshooting](docs/troubleshooting.md)
+[فارسی](README.fa.md) · [How it works](docs/how-it-works.md) · [Agents](docs/agents.md) · [Continuity](docs/continuity.md) · [The app](docs/app.md) · [Privacy](docs/privacy.md) · [Troubleshooting](docs/troubleshooting.md)
 
 ---
 
@@ -24,11 +24,11 @@ There is no server, no account and no network code. Python standard library only
 | **A portable backup of any project or chat** | `python .ai-memory/hamzaban/cli.py continuity write --dir <project>` writes a `project-continuity/` folder (README, your rules word for word, context, a dated handoff, decisions, a test log, open questions) with evidence labels (`CONFIRMED`, `INFERRED`, `UNKNOWN` ...), so another agent or another computer can pick the work up cold. The `hamzaban-continuity` skill has an agent finish the parts that need a look at the code. `parity` checks that `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` and the rest all carry your rules. See [docs/continuity.md](docs/continuity.md). |
 | **The agents' own memories, translated** | Notes Claude Code keeps for itself and the memories Codex extracts are proposed to your notebook (`30-Pending`). Nothing becomes a fact until you approve it. |
 | **Shared skills** | A skill you install in one agent is copied to the others. It never deletes and never overwrites a skill that differs; a conflict becomes a note for you. |
-| **A control room** | One offline HTML page: active chats, cut-off chats with a *copy "continue" command* button, the skills matrix, and how the memory flows. |
+| **A control room, as an application** | One offline HTML page: active chats, cut-off chats with a *copy "continue" command* button, the skills matrix, and how the memory flows. On Windows it has an icon, a Start-menu entry, a desktop shortcut and its own window, and every chat has a *where is it?* button that names the application the chat took place in and the part of the chat, and opens the application, the file or the folder ([docs/app.md](docs/app.md)). |
 
 Honest limits: it moves **text**, not a model's hidden state, tools or logins. A resume text is extracted from a log and is not verified, so the
 receiving agent should check the real files. Topic splitting is heuristic. Web chats (claude.ai, ChatGPT, Gemini) have no local log; they
-join through a *closing block* you copy once. The control room and the tags are written in Persian (RTL); the docs are English and Persian.
+join through a *closing block* you copy once. The control room and the tags are written in Persian (RTL); the docs are English and Persian. The shortcuts, the application window and the buttons that open an application or a file are Windows-only for now, and only Codex has a link that opens one exact chat.
 
 ## Install
 
@@ -51,7 +51,7 @@ Useful options (the same on every system):
 python install.py --dry-run              show everything it would do, change nothing
 python install.py --vault ~/Memory       choose the folder
 python install.py --yes                  say yes to every step
-python install.py --skip hooks,schedule  leave steps out (skills, mcp, hooks, schedule, open)
+python install.py --skip hooks,schedule  leave steps out (skills, mcp, hooks, schedule, shortcuts, open)
 python install.py --doctor               health check of an installed copy
 python install.py --uninstall            remove the background task, hooks and MCP entries; keeps all notes
 ```
@@ -63,14 +63,14 @@ What the installer does, in order. The first three stay inside the Vault; every 
 5. **mcp**: the memory server `infinity-memory` in Claude Code, Codex and Claude Desktop (their config files are backed up first);
 6. **hooks**: Claude Code hooks that record chats and hand over context (backup first);
 7. **schedule**: a background task once a minute, no admin rights (Windows Task Scheduler; launchd or cron elsewhere);
-8. a first run, then the control room opens.
+8. **shortcuts** (Windows): a Start-menu entry and a desktop shortcut with the Hamzaban icon, and the `hamzaban:` link behind the *where is it?* buttons; 9. a first run, then the control room opens as its own window.
 
 Every change outside the Vault is backed up first and logged to `<Vault>/.ai-memory/logs/install.log`.
 
 ## Using it
 
 - **Start a new chat** in Claude Code or Codex and say *"continue from my last chat"*, or *"continue from CX-7K3QF"* (a tag from the control room).
-- **Open the control room**: `00-Dashboard/control-room.html` in your Vault (on Windows: `CONTROL-ROOM.cmd` in `.ai-memory`). Each chat card has a *copy "continue" command* button.
+- **Open the control room**: on Windows the **Hamzaban همزبان** icon on your desktop or in the Start menu; anywhere, `00-Dashboard/control-room.html` in your Vault. Each chat card has a *copy "continue" command* button and a *where is it?* (کجاست؟) button.
 - **Review proposals**: `python .ai-memory/pending.py list`, then `approve <id>` or `reject <id>`. Facts, decisions, the agents' own memories and closing blocks all wait here.
 - **Make a work or a chat transferable**: ask an agent *"make a continuity package for this project"*, or run `python .ai-memory/hamzaban/cli.py continuity write --dir <project>`. Check that your agents' instruction files agree with `python .ai-memory/hamzaban/cli.py parity --dir <project> --home`, and write the same rules into them with `export --to <agent> --dir <folder> --rules-only` (see [docs/continuity.md](docs/continuity.md)).
 - **Close a web chat**: ask the agent *"wrap up for memory"*; it writes one `hamzaban-close` block. Copy it and run `HAMZABAN-CLOSE.cmd` (Windows, reads the clipboard) or `python .ai-memory/hamzaban/cli.py ingest <file>`.
@@ -92,6 +92,7 @@ engine/                                 what gets copied to <Vault>/.ai-memory (
   tests/                                the engine's tests (not installed)
 skills/                                 the skills the installer adds
 tests/                                  the installer's tests
+tools/                                  draws the icon (python tools/make_icon.py)
 docs/                                   how it works, per-agent guide, privacy, troubleshooting, development
 ```
 

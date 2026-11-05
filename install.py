@@ -6,8 +6,8 @@
   python install.py --vault PATH       use this folder (created when missing; existing notes are never touched)
   python install.py --yes              say yes to every step (still prints and logs everything)
   python install.py --dry-run          print what would happen; change nothing at all
-  python install.py --skip mcp,hooks   leave steps out: skills, mcp, hooks, schedule, open
-  python install.py --uninstall        remove the scheduled task, the hooks and the MCP entries this installer added.
+  python install.py --skip mcp,hooks   leave steps out: skills, mcp, hooks, schedule, shortcuts, open
+  python install.py --uninstall        remove the scheduled task, the hooks, the MCP entries and the shortcuts this installer added.
                                        Your Vault and all your notes stay exactly as they are.
   python install.py --doctor           health check of an installed copy
 
@@ -18,7 +18,9 @@ What it does, in order (the first three stay inside the Vault; the rest ask firs
   5. mcp: the memory server "infinity-memory" is registered in Claude Code, Codex and Claude Desktop (backup first);
   6. hooks: Claude Code hooks that record chats and hand over context (backup first);
   7. schedule: a background task, once a minute, no admin rights (Windows Task Scheduler / launchd / cron);
-  8. first run, then the control room opens in your browser.
+  8. shortcuts (Windows): a Start-menu entry and a desktop shortcut with the Hamzaban icon, and the hamzaban: link that lets the
+     control room open the application or the file of a chat;
+  9. first run, then the control room opens as its own window.
 Nothing is uploaded anywhere. Nothing of yours is deleted. Every change outside the Vault is backed up first and logged to
 <Vault>/.ai-memory/logs/install.log.
 """
@@ -42,7 +44,7 @@ ROOT = Path(__file__).resolve().parent
 ENGINE_SRC = ROOT / "engine"
 SKILLS_SRC = ROOT / "skills"
 MIN_PY = (3, 10)
-STEPS = ("skills", "mcp", "hooks", "schedule", "open")
+STEPS = ("skills", "mcp", "hooks", "schedule", "shortcuts", "open")
 VAULT_DIRS = ("00-Context", "00-Dashboard", "10-Facts", "10-Projects", "20-Checkpoints", "30-Pending",
               "40-Conversation-Capture", "50-Handoff", "60-Chats")
 SKIP_NAMES = {"__pycache__", "tests", ".pytest_cache"}
@@ -414,6 +416,23 @@ def doctor_summary(engine: Path, h: Path) -> list[str]:
 
 
 # ---------------------------------------------------------------------------------------------------- main flows
+def shortcuts_supported() -> bool:
+    return is_windows()
+
+
+def shortcuts_step(engine: Path, h: Path, ui: Ui, remove: bool = False) -> list[str]:
+    """Windows: a Start-menu entry and a desktop shortcut with the Hamzaban icon, and the hamzaban: link the control room's buttons use."""
+    if not (engine / "shortcuts.py").is_file():
+        return ["shortcuts.py is missing from the engine folder; nothing done"]
+    verb = "remove" if remove else "install"
+    if ui.dry:
+        return [f"would {verb} the Start-menu entry, the desktop shortcut and the hamzaban: link (this user only, no administrator rights)"]
+    code, out, err = run_engine(engine, h, "shortcuts.py", verb)
+    if code != 0:
+        return [f"failed: {(err or out).strip()[:200]}"]
+    return [ln.strip() for ln in out.splitlines() if ln.strip()][:6] or ["done"]
+
+
 def do_install(args, ui: Ui) -> int:
     h = home()
     if sys.version_info < MIN_PY:
@@ -450,11 +469,16 @@ def do_install(args, ui: Ui) -> int:
         "mcp": ("Register the memory server in Claude Code, Codex and Claude Desktop (their config files are backed up first)?", register_mcp),
         "hooks": ("Register Claude Code hooks (record chats, hand over context; settings.json is backed up first)?", register_hooks),
         "schedule": ("Run the background sync once a minute (no admin rights, never deletes anything)?", schedule),
+        "shortcuts": ("Put Hamzaban in the Start menu and on the desktop with its own icon, and let the control room open the application or "
+                      "the file of a chat (this user only, no admin rights)?", shortcuts_step),
     }
-    for step in ("skills", "mcp", "hooks", "schedule"):
+    for step in ("skills", "mcp", "hooks", "schedule", "shortcuts"):
         question, fn = questions[step]
         if step in skip:
             ui.say(f"- {step}: skipped (--skip)")
+            continue
+        if step == "shortcuts" and not shortcuts_supported():
+            ui.say("- shortcuts: skipped (Windows only for now)")
             continue
         if not ui.dry and not ui.ask(question):
             ui.say(f"- {step}: not done. {'Use --yes or answer y to include it.' if not ui.interactive and not ui.yes else 'You said no.'}")
@@ -484,7 +508,9 @@ def do_install(args, ui: Ui) -> int:
         write_record(h, vault, ui, done)
         page = vault / "00-Dashboard" / "control-room.html"
         if "open" not in skip and not args.no_open and page.is_file() and ui.ask("Open the control room now?"):
-            if is_windows() and (engine / "CONTROL-ROOM.cmd").is_file():
+            if is_windows() and (engine / "app_window.py").is_file():
+                subprocess.Popen([sys.executable, str(engine / "app_window.py")], cwd=str(engine))     # its own window, with its own profile
+            elif is_windows() and (engine / "CONTROL-ROOM.cmd").is_file():
                 subprocess.Popen(["cmd", "/c", str(engine / "CONTROL-ROOM.cmd")], cwd=str(engine))
             else:
                 webbrowser.open(page.as_uri())
@@ -505,7 +531,7 @@ def do_uninstall(args, ui: Ui) -> int:
     engine = vault / ".ai-memory"
     ui.log_path = engine / "logs" / "install.log"
     ui.say(f"Removing the integrations of {vault}" + ("  (dry run)" if ui.dry else ""))
-    if not ui.dry and not ui.ask("Remove the background task, the Claude Code hooks and the memory-server entries?"):
+    if not ui.dry and not ui.ask("Remove the background task, the shortcuts, the Claude Code hooks and the memory-server entries?"):
         ui.say("Nothing changed.")
         return 0
     try:
@@ -513,6 +539,12 @@ def do_uninstall(args, ui: Ui) -> int:
             ui.say(f"- schedule: {ln}")
     except Exception as exc:
         ui.say(f"- schedule: failed: {type(exc).__name__}: {str(exc)[:160]}")
+    if shortcuts_supported():
+        try:
+            for ln in shortcuts_step(engine, h, ui, remove=True):
+                ui.say(f"- shortcuts: {ln}")
+        except Exception as exc:
+            ui.say(f"- shortcuts: failed: {type(exc).__name__}: {str(exc)[:160]}")
     settings = h / ".claude" / "settings.json"
     if (engine / "merge_claude_settings.py").is_file() and settings.is_file():
         if ui.dry:

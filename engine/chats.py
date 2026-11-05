@@ -395,10 +395,16 @@ class Registry:
     def _topic_rows(self, con: sqlite3.Connection, chat: dict) -> list[dict]:
         st = json.loads(chat["topics"] or "{}")
         msgs = con.execute("SELECT seq, role, text, topic, ts FROM msgs WHERE chat=? ORDER BY seq", (chat["tag"],)).fetchall()
+        ordinal, seen = {}, 0          # the n-th message the person wrote, so the page can say "messages 41 to 52 of 71"
+        for m in msgs:
+            if m["role"] == "user":
+                seen += 1
+                ordinal[m["seq"]] = seen
         out = []
         for t in st.get("topics", []):
             mine = [m for m in msgs if m["topic"] == t["n"]]
             users = [m for m in mine if m["role"] == "user"]
+            nums = [ordinal[m["seq"]] for m in users]
             last_user = users[-1] if users else None
             reply = next((m for m in mine if last_user is not None and m["seq"] == last_user["seq"] + 1), None)
             out.append({"tag": f"{chat['tag']}/T{t['n']}", "n": t["n"], "title": t["title"], "source": t.get("source", "auto"),
@@ -406,7 +412,7 @@ class Registry:
                         "first_user": _one(users[0]["text"], 240) if users else "",
                         "last_user": _one(last_user["text"], 240) if last_user is not None else "",
                         "last_assistant": _one(reply["text"], 320) if reply is not None else "",
-                        "current": t["n"] == st.get("cur")})
+                        "current": t["n"] == st.get("cur"), "from_n": min(nums) if nums else 0, "to_n": max(nums) if nums else 0})
         return out
 
     def get(self, ref: str, con: sqlite3.Connection | None = None) -> dict | None:
@@ -457,7 +463,7 @@ class Registry:
             rows.sort(key=lambda r: (order.get(r["state"], 9), -activity(r).timestamp()))
             for i, r in enumerate(rows):
                 item = {"tag": r["tag"], "agent": r["agent"], "agent_fa": AGENT_FA.get(r["agent"], r["agent"]), "title": r["title"] or r["last_user"][:70] or "(بدون عنوان)",
-                        "project": r["project"], "cwd": r["cwd"], "kind": r["kind"], "state": r["state"], "state_fa": STATE_FA.get(r["state"], r["state"]),
+                        "project": r["project"], "cwd": r["cwd"], "entry": r["entry"], "source_id": r["source_id"], "path": r["path"], "kind": r["kind"], "state": r["state"], "state_fa": STATE_FA.get(r["state"], r["state"]),
                         "reason": r["reason"], "reason_fa": REASON_FA.get(r["reason"], ""), "first_ts": r["first_ts"],
                         "last_ts": activity(r).strftime("%Y-%m-%dT%H:%M:%SZ") if (r["last_ts"] or r["mtime"]) else "",
                         "turns": r["user_turns"], "last_user": r["last_user"], "last_assistant": r["last_assistant"],

@@ -36,6 +36,7 @@ desktop.ini
 /engine/hamzaban-state.json
 /engine/native-memory-state.json
 /engine/skills-matrix.json
+/engine/app-launchers.json
 
 # A Vault is somebody's private notes, never part of this project
 /00-Context/

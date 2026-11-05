@@ -550,6 +550,8 @@ class OtherSources(Base):
         legacy = self.vault / "40-Conversation-Capture" / "f5d88ce3-0e9f-49b8-8621-5d427d3ea0b4"
         legacy.mkdir(parents=True)
         (legacy / "message-m1.md").write_text("---\ntitle: User message\nconversation: x\nupdated: 2026-10-23T11:33:24Z\nsource: cos-session-input\nrole: user\n---\n\n# User message\n\nپیام قدیمی\n", encoding="utf-8")
+        old = (NOW - timedelta(hours=3)).timestamp()
+        os.utime(legacy / "message-m1.md", (old, old))       # like every other fixture its time is relative to NOW; the real clock must not matter
         self.scan()
         live = self.chat("cos", d.name)
         self.assertEqual((live["title"], live["user_turns"]), ("گفتگوی آزمایشی", 1))

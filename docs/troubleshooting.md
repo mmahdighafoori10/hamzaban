@@ -20,6 +20,10 @@ python install.py --doctor
 | A chat is missing from the control room | It is older than 120 days, or its agent keeps no readable log (web chats, Claude Desktop). Run `python .ai-memory/chats.py scan` and `python .ai-memory/chats.py list --all`. |
 | A chat shows the wrong state | `python .ai-memory/chats.py show <TAG>` lists its topics; `resume <TAG>` prints what the registry knows. The state comes only from the agent's own log. |
 | The control room shows strange spacing around English words | It is right-to-left Persian text; the page isolates Latin words, but a very old browser may not. Use a current Edge, Chrome or Firefox. |
+| *Hamzaban* is not in the Start menu, or there is no desktop shortcut | Windows only. `python .ai-memory/shortcuts.py status` says what is missing and `python .ai-memory/shortcuts.py install` adds it (or run the installer again and accept the `shortcuts` step). |
+| A button of the *کجاست؟* panel does nothing, or the browser asks which app to use | The `hamzaban:` link is not registered for this Windows user: `python .ai-memory/shortcuts.py status`, then `install`. Your browser may ask once before it hands the link to Windows; allow it. |
+| *Open this chat* opens the application but not the chat | Only Codex has a link to one chat. For the Claude desktop app and Chat On Steroids use the title and the search phrase (Ctrl+F) that the panel shows. See [app.md](app.md). |
+| The application window does not open, or opens as a normal browser tab | It needs Microsoft Edge or Chrome (Windows includes Edge). Set `HAMZABAN_BROWSER` to the browser's `.exe` to pick one; without either, the page opens in your default browser. |
 | `database is locked` in `logs/errors.log` | Two passes overlapped (rare). It retries on the next pass. If it persists, close other programs that open `.ai-memory/*.sqlite3`. |
 | I want to start over | `python install.py --uninstall`, delete `<Vault>/.ai-memory`, run the installer again. Your notes in the other Vault folders are never touched by either step. |
 

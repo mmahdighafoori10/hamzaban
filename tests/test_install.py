@@ -40,7 +40,8 @@ class Sandbox(unittest.TestCase):
         self.desktop = self.home / "AppData" / "Roaming" / "Claude" / "claude_desktop_config.json"
         patches = [mock.patch.dict(os.environ, {"HAMZABAN_HOME": str(self.home)}),
                    mock.patch.object(install, "SETTLE_WAIT", 0), mock.patch.object(install.time, "sleep", lambda *_: None),
-                   mock.patch.object(install, "schedule", lambda engine, h, ui, remove=False, run=None: [f"fake schedule {'removed' if remove else 'registered'}"])]
+                   mock.patch.object(install, "schedule", lambda engine, h, ui, remove=False, run=None: [f"fake schedule {'removed' if remove else 'registered'}"]),
+                   mock.patch.object(install, "shortcuts_supported", lambda: False)]     # real shortcuts are not something a test may create
         for p in patches:
             p.start()
             self.addCleanup(p.stop)
@@ -138,6 +139,69 @@ class FreshInstall(Sandbox):
         self.assertEqual(code, 0, out)
         self.assertNotIn("infinity-memory", self.claude_json.read_text(encoding="utf-8"))
         self.assertEqual(out.count("skipped (--skip)"), 4)
+
+
+class ShortcutsStep(Sandbox):
+    """The Start-menu entry, the desktop shortcut and the hamzaban: link: Windows only, asked like every other step, never created by a test."""
+
+    def fake_step(self, calls):
+        def step(engine, h, ui, remove=False):
+            calls.append("remove" if remove else "install")
+            return [f"fake shortcuts {'removed' if remove else 'created'}"]
+        return step
+
+    def test_it_is_skipped_with_a_clear_line_where_it_is_not_supported(self):
+        code, out = self.run_install("--vault", str(self.vault), "--yes", "--no-open")
+        self.assertEqual(code, 0, out)
+        self.assertIn("- shortcuts: skipped (Windows only for now)", out)
+
+    def test_it_is_asked_last_and_runs_only_on_a_yes(self):
+        calls = []
+        with mock.patch.object(install, "shortcuts_supported", lambda: True), mock.patch.object(install, "shortcuts_step", self.fake_step(calls)):
+            code, out = self.run_install("--vault", str(self.vault), "--no-open", interactive=True, answers=["n", "n", "n", "n", "n"])
+            self.assertEqual((code, calls), (0, []), out)
+            self.assertIn("- shortcuts: not done", out)
+            code, out = self.run_install("--vault", str(self.vault), "--no-open", interactive=True, answers=["n", "n", "n", "n", "y"])
+        self.assertEqual((code, calls), (0, ["install"]), out)
+        self.assertIn("fake shortcuts created", out)
+
+    def test_yes_and_skip(self):
+        calls = []
+        with mock.patch.object(install, "shortcuts_supported", lambda: True), mock.patch.object(install, "shortcuts_step", self.fake_step(calls)):
+            self.run_install("--vault", str(self.vault), "--yes", "--no-open", "--skip", "mcp,hooks,skills,schedule")
+            self.assertEqual(calls, ["install"])
+            code, out = self.run_install("--vault", str(self.vault), "--yes", "--no-open", "--skip", "shortcuts")
+        self.assertEqual(calls, ["install"], "skipped: not run again")
+        self.assertIn("- shortcuts: skipped (--skip)", out)
+
+    def test_uninstall_takes_the_shortcuts_out_too(self):
+        self.run_install("--vault", str(self.vault), "--yes", "--no-open")
+        calls = []
+        with mock.patch.object(install, "shortcuts_supported", lambda: True), mock.patch.object(install, "shortcuts_step", self.fake_step(calls)):
+            code, out = self.run_install("--uninstall", "--yes")
+        self.assertEqual((code, calls), (0, ["remove"]), out)
+        self.assertIn("- shortcuts: fake shortcuts removed", out)
+
+    def test_the_step_runs_the_engines_script_and_reports_what_it_said(self):
+        eng = self.tmp / "engine"
+        eng.mkdir()
+        ui = install.Ui(yes=True, out=lambda *_: None, interactive=False)
+        self.assertIn("missing", install.shortcuts_step(eng, self.home, ui)[0])
+        (eng / "shortcuts.py").write_text("# stub\n", encoding="utf-8")
+        calls = []
+
+        def fake_run(engine, h, script, *args):
+            calls.append((script, args))
+            return 0, "created A\nregistered the hamzaban: link for this user\n\n", ""
+        with mock.patch.object(install, "run_engine", fake_run):
+            self.assertEqual(install.shortcuts_step(eng, self.home, ui), ["created A", "registered the hamzaban: link for this user"])
+            install.shortcuts_step(eng, self.home, ui, remove=True)
+        self.assertEqual(calls, [("shortcuts.py", ("install",)), ("shortcuts.py", ("remove",))])
+        with mock.patch.object(install, "run_engine", lambda *a: (1, "", "boom: it did not work")):
+            self.assertEqual(install.shortcuts_step(eng, self.home, ui), ["failed: boom: it did not work"])
+        dry = install.Ui(yes=True, dry=True, out=lambda *_: None, interactive=False)
+        with mock.patch.object(install, "run_engine", lambda *a: self.fail("a dry run starts nothing")):
+            self.assertIn("would install", install.shortcuts_step(eng, self.home, dry)[0])
 
 
 class UpdateAndUninstall(Sandbox):

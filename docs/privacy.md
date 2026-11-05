@@ -12,6 +12,7 @@ Hamzaban is a local tool. This page says exactly what it reads, what it writes, 
 | Codex memories `~/.codex/memories_1.sqlite` (read from a temporary copy) | proposals |
 | Chat On Steroids `%APPDATA%/chat-on-steroids/sessions` (Windows) | the same, for that app |
 | Skill folders of your agents | keeping skills in step |
+| The list of applications in your Start menu (`Get-StartApps`, Windows) | finding the Claude, Codex and Chat On Steroids applications for the *open the application* buttons; remembered for twelve hours in `.ai-memory/app-launchers.json` |
 | Agent config files (`~/.claude.json`, `~/.claude/settings.json`, `~/.codex/config.toml`, `claude_desktop_config.json`) | only the installer and `connect_all.py` touch them: to add or remove *their own* entries, after a backup |
 
 It does not read browser tabs, other apps, your keychain, `.env` files or anything it was not pointed at above. Symlinks are skipped.
@@ -22,15 +23,18 @@ Only inside your Vault (`.ai-memory` for the engine and its data), plus:
 
 - the entries the installer registers (MCP server, Claude Code hooks, the background task), each backed up first and removable with `python install.py --uninstall`;
 - skill folders in your agents' skill directories (new skills are added; nothing is overwritten or deleted);
-- `~/.hamzaban/install.json` (the path of your Vault, so `--uninstall` and `--doctor` can find it).
+- `~/.hamzaban/install.json` (the path of your Vault, so `--uninstall` and `--doctor` can find it);
+- on Windows, when you accept the `shortcuts` step: a Start-menu entry, a desktop shortcut and the `hamzaban:` link under `HKEY_CURRENT_USER\Software\Classes\hamzaban`, and, once you open the application window, a browser
+  profile folder `%LOCALAPPDATA%\Hamzaban\app-profile`. `python .ai-memory/shortcuts.py remove` (or `--uninstall`) takes the first three away; the profile folder you can delete by hand ([app.md](app.md)).
 
 The Vault holds Markdown and SQLite files: your messages (clipped to 1,500 characters), agent replies (clipped to 900), chat titles, topics, the files a chat
 changed, and the notes you approve. Treat the Vault like your chat history: anyone who can read the folder can read it.
 
 ## Network
 
-None. No module in the engine imports a networking library; the installer only opens a local file in your browser; the control room page loads no remote
-script, style, font or image and sends nothing. The MCP server speaks over stdio to the agent that starts it.
+None. No module in the engine imports a networking library; the installer only opens a local file (the control room, in your browser or in its own window); the control room page loads no remote
+script, style, font or image and sends nothing. The MCP server speaks over stdio to the agent that starts it. The one thing that can reach the internet is a button you press: *open the application* for a web-only chat
+(claude.ai, ChatGPT, Gemini) that has no app on your computer opens that website in your default browser. Hamzaban sends nothing to it.
 
 (The agents themselves send your chats to their own services, as they always did. Hamzaban does not change that. What it puts into a pack is read by the agent
 and therefore goes to that agent's provider like anything else you type.)
@@ -50,6 +54,7 @@ reads. The secret also remains in the agent's own session file; remove it there 
 - **Nothing becomes a fact without you.** Facts, decisions, the agents' own memories and closing blocks all wait in `30-Pending`.
 - **Private facts never enter a pack.** `sensitivity: private` facts are excluded. (`public-ok` is reserved for a possible future sync; today nothing leaves the machine.)
 - **The control room is a static file.** The text of your chats is escaped before it is placed in the page, and the copy buttons carry plain text only.
+- **The `hamzaban:` link is narrow.** It carries an action and a chat tag, never a path, a command or an address; everything it opens is looked up in your own chat registry ([app.md](app.md#the-hamzaban-link)).
 
 ## Keep the Vault out of the wrong places
 

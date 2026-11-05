@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="همزبان · Hamzaban">
+  <defs>
+    <linearGradient id="hz-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b378f"/>
+      <stop offset="1" stop-color="#1c1a5e"/>
+    </linearGradient>
+    <clipPath id="hz-left"><circle cx="192" cy="232" r="128"/></clipPath>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#hz-bg)"/>
+  <path d="M128 343 84 412 225 356 Z" fill="#22c7b8"/>
+  <circle cx="192" cy="232" r="128" fill="#22c7b8"/>
+  <path d="M384 343 428 412 287 356 Z" fill="#ffb347"/>
+  <circle cx="320" cy="232" r="128" fill="#ffb347"/>
+  <circle cx="320" cy="232" r="128" fill="#fffdf5" clip-path="url(#hz-left)"/>
+</svg>

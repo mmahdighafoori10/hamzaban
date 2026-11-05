@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+**The application (Windows)**
+- Hamzaban has an identity now: an icon (`engine/assets`, drawn by `tools/make_icon.py`), a Start-menu entry and a desktop shortcut named *Hamzaban همزبان*, and its own window (`app_window.py`: Edge or Chrome in app mode with a profile of its own). The installer's new `shortcuts` step creates them (it asks first; `--skip shortcuts`), `python shortcuts.py install|status|remove` does it by hand, and `--uninstall` undoes it. Current user only, no administrator rights.
+- A **کجاست؟** ("where is it?") button on every chat, every part of a chat and every *now* entry: the application the chat took place in (the Claude app, Claude Code in a terminal, the Codex app, Codex in a terminal, Chat On Steroids, or the web service of a closing-block chat), the part of the chat (message numbers, time, a search phrase), the chat file and folder, and buttons that open the application, open Codex on that very chat (`codex://threads/<id>`), show the file in Explorer, open the folder or continue in a terminal.
+- The `hamzaban:` link (registered under `HKEY_CURRENT_USER` only) carries an action and a chat tag and nothing else; the folder, file, application and command are looked up in the chat registry. No server, no network code. See `docs/app.md`.
+- Not in this change: shortcuts for macOS and Linux, and a link into an old Claude desktop session or a Chat On Steroids chat (neither application has one).
+
 **Continuity packages**
 - `continuity.py` / `hamzaban continuity write`: a portable `project-continuity/` folder for one project or one chat (README, INSTRUCTIONS, CONTEXT, a dated HANDOFF, DECISIONS, TEST-LOG, OPEN-QUESTIONS), filled from the Vault, the chat registry and read-only git and manifest facts, with five evidence labels. What needs a look at the code stays `TODO(agent)`.
 - A cut-off chat's handoff says why it stopped and when the usage window opens again. Chats and proposals from other projects are counted, never quoted. A file you edited is never overwritten (the fresh copy lands beside it as `<name>.generated.md`).
