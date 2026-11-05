@@ -59,7 +59,9 @@ class ClaudeCode(Base):
         data = json.loads(cfg.read_text(encoding="utf-8"))
         self.assertEqual(data["numStartups"], 7)
         self.assertEqual(set(data["mcpServers"]), {"mine", "infinity-memory"})
-        self.assertEqual(data["mcpServers"]["infinity-memory"]["args"], [str(self.eng / "infinity_mcp.py")])
+        # the temp dir may be spelled differently by the OS (8.3 short names on Windows, /private/var on macOS): compare the real paths
+        [arg] = data["mcpServers"]["infinity-memory"]["args"]
+        self.assertEqual(Path(arg).resolve(), (self.eng / "infinity_mcp.py").resolve())
         self.assertTrue(list(self.home.glob(".claude.json.bak-*")), "a backup is made before the first change")
         self.assertIn("Claude Code: OK (already present", self.connect()[1])
         code, out, _ = self.connect("--remove")
