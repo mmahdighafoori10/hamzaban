@@ -31,6 +31,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import webbrowser
 from datetime import datetime
@@ -156,6 +157,14 @@ def detect_agents(h: Path) -> dict[str, bool]:
             "Chat On Steroids": is_windows() and (roaming / "chat-on-steroids").is_dir()}
 
 
+def _is_inside(path: Path, base: Path) -> bool:
+    try:
+        path.resolve().relative_to(base)
+        return True
+    except ValueError:
+        return False
+
+
 def check_vault(path: Path, h: Path) -> str | None:
     """Why this folder cannot be the Vault, or None."""
     if path.exists() and not path.is_dir():
@@ -163,7 +172,8 @@ def check_vault(path: Path, h: Path) -> str | None:
     if path.parent == path or path == h or path == h.resolve():
         return "that is a drive root or your home folder: pick a dedicated folder"
     low = str(path).replace("\\", "/").lower().rstrip("/")
-    for bad in ("c:/windows", "c:/program files", "c:/program files (x86)", "/usr", "/etc", "/bin", "/sbin", "/var", "/system", "/library"):
+    inside_home = any(_is_inside(path, base) for base in (h, h.resolve(), Path(tempfile.gettempdir()).resolve()))
+    for bad in () if inside_home else ("c:/windows", "c:/program files", "c:/program files (x86)", "/usr", "/etc", "/bin", "/sbin", "/var", "/system", "/library"):
         if low == bad or low.startswith(bad + "/"):
             return "that is a system folder"
     try:
