@@ -47,3 +47,9 @@ desktop.ini
 /40-Conversation-Capture/
 /50-Handoff/
 /60-Chats/
+/80-Transfer/
+
+# Backups and logs of somebody's chats are private notes too: a continuity package made inside a checkout of this project, chat transcripts
+project-continuity/
+.hamzaban-continuity.json
+*.jsonl

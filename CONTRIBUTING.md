@@ -7,6 +7,8 @@ Thank you for helping. Hamzaban is small on purpose: Python standard library onl
 - **Bugs and ideas**: open an issue first for anything bigger than a typo. Say which agent, which OS and what `python install.py --doctor` printed.
 - **No real data**: never paste a real chat, a real Vault note, a path with your name, a key or a token into an issue, a test or a fixture. Tests use fake users
   (`C:\Users\demo`) and clearly fake secrets (built by concatenation, like `"AKIA" + "ABCDEFGHIJKLMNOP"`).
+- **Your own backups stay yours**: Vaults, chat transcripts and `project-continuity/` folders are git-ignored here, and `tests/test_repo_hygiene.py` fails if one is ever
+  tracked. If you make a continuity package while working on this project, keep it out of commits and out of issues. Chat tags and ids in examples are made up.
 - **Scope**: new *dialects* (adapters), new *chat readers*, fixes for macOS/Linux, translations of the control room and better docs are very welcome.
   A feature that needs a network, a server or a dependency is not a fit.
 
