@@ -46,7 +46,7 @@ Every chat card, every part (topic) of a chat and every entry of the *now* list 
 |---|---|---|
 | open this very chat | opens the chat in the Codex app through `codex://threads/<id>`, the link Codex documents | a Codex-app chat, and the `codex:` link is registered on this computer |
 | open the application | starts the application from the Start menu; for a web chat, opens the website | the chat has an application or a website, and no link to the chat itself |
-| show in Explorer | opens Explorer with the chat file selected | the chat has a log file that still exists |
+| show in Explorer | opens Explorer with the chat's log selected (a Codex log that has been packed into `.jsonl.zst` is found too; for Chat On Steroids it is the session folder) | the log is still there |
 | open the folder | opens the chat's working folder | the chat has one, and it still exists |
 | open in a terminal | opens Windows Terminal (or `cmd`) in the working folder and runs `claude --resume <id>` or `codex resume <id>` | a Claude Code or Codex chat whose command is installed; otherwise the command is shown for you to copy |
 
@@ -56,7 +56,8 @@ Honest limits:
   chat by its title or by the search phrase. No application jumps to an exact message; the message numbers and the search phrase are signposts.
 - The Codex link is the one Codex documents. How far a given version of the app follows it is up to the app.
 - Web chats (claude.ai, ChatGPT, Gemini) are known only from their closing block. They have no log, so the panel can name the service and open the app or the website, nothing more.
-- Everything in the panel comes from the chat registry, that is from the agents' own logs. If the file or folder has been moved or deleted since, the button says so instead of failing quietly.
+- Everything in the panel comes from the chat registry, that is from the agents' own logs, and the file and the folder are looked for on the disk every time the page is built. What is gone gets no button
+  but a note, *دیگر در این مسیر نیست* ("no longer at this path"), and its path stays visible for copying. The scratch folders of Claude desktop sessions, for one, are often gone by the time you look.
 
 ## The `hamzaban:` link
 

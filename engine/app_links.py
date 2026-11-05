@@ -96,6 +96,26 @@ def search_phrase(text: str, words: int = 7, limit: int = 60) -> str:
     return " ".join(kept[:words])[:limit].rstrip()
 
 
+def _exists(path: str) -> bool:
+    return os.path.exists(path)
+
+
+def _is_dir(path: str) -> bool:
+    return os.path.isdir(path)
+
+
+def log_file(path: str, exists=None) -> Path | None:
+    """The chat's log (for Chat On Steroids its session folder) as it is on disk now, or None when it is gone. Codex packs old logs into
+    <name>.jsonl.zst, so that name is tried too; a note
+    in the Vault (.md) is not an agent's log."""
+    if not path or path.endswith(".md"):
+        return None
+    for candidate in (path, path + ".zst"):
+        if (exists or _exists)(candidate):
+            return Path(candidate)
+    return None
+
+
 # ---------------------------------------------------------------------------------------------------- links
 def build_uri(action: str, tag: str | None = None, agent: str | None = None) -> str:
     if action not in ACTIONS:
@@ -193,17 +213,25 @@ def find_app(key: str, apps: dict[str, str] | None = None) -> tuple[str, str] | 
 
 
 # ---------------------------------------------------------------------------------------------------- what the control room shows
-def where(chat: dict, schemes=None, which=shutil.which) -> dict:
-    """Everything the 'where is it?' panel needs about one chat, as plain data. `chat` is one item of Registry.snapshot()."""
+def where(chat: dict, schemes=None, which=shutil.which, exists=None, is_dir=None) -> dict:
+    """Everything the 'where is it?' panel needs about one chat, as plain data. `chat` is one item of Registry.snapshot(). The file and the folder
+    the registry remembers are looked for on the disk now: a button is only offered for something that is still there, and what is gone is said so."""
     agent, tag = chat.get("agent", ""), chat.get("tag", "")
     sid = thread_id(agent, chat.get("source_id", ""))
     key = app_key(agent, chat.get("entry", ""))
     app = APPS.get(key)
+    path, cwd = str(chat.get("path") or ""), str(chat.get("cwd") or "")
+    shown = log_file(path, exists)
+    folder = bool(cwd) and (is_dir or _is_dir)(cwd)
     out = {"key": key, "app_fa": app["fa"] if app else (chat.get("agent_fa") or agent), "entry": chat.get("entry", ""), "primary": None,
-           "note": app["note"] if app else "", "resume": None, "reveal": bool(chat.get("path")) and not str(chat.get("path")).endswith(".md"),
-           "folder": bool(chat.get("cwd")), "reveal_href": "", "folder_href": ""}
+           "note": app["note"] if app else "", "resume": None, "reveal": shown is not None, "file": str(shown) if shown else "", "packed": shown is not None and shown.suffix == ".zst",
+           "file_missing": bool(path) and not path.endswith(".md") and shown is None, "folder": folder, "folder_missing": bool(cwd) and not folder,
+           "reveal_href": "", "folder_href": ""}
     if TAG_RE.fullmatch(tag or ""):
-        out["reveal_href"], out["folder_href"] = build_uri("reveal", tag=tag), build_uri("folder", tag=tag)
+        if out["reveal"]:
+            out["reveal_href"] = build_uri("reveal", tag=tag)
+        if out["folder"]:
+            out["folder_href"] = build_uri("folder", tag=tag)
     if app and app["chat_link"] and ID_RE.fullmatch(sid or ""):
         scheme = app["chat_link"].split(":")[0]
         if (scheme in schemes) if schemes is not None else scheme_registered(scheme):
@@ -292,8 +320,8 @@ def handle(uri: str, registry=None, popen=subprocess.Popen, which=shutil.which, 
     if action == "app":
         return "opened " + launch_app(app_key(chat["agent"], chat["entry"]), popen, apps, startfile)
     if action == "reveal":
-        path = Path(chat["path"] or "")
-        if not chat["path"] or not path.exists():
+        path = log_file(chat["path"] or "")
+        if path is None:
             raise LinkError("فایل این چت دیگر سر جایش نیست.")
         reveal_file(path, popen)
         return f"revealed {path}"

@@ -101,7 +101,7 @@ class Links(unittest.TestCase):
 
 class Where(unittest.TestCase):
     def test_codex_gets_the_exact_chat_link_built_from_the_thread_id(self):
-        w = al.where(chat(), schemes={"codex"}, which=lambda c: None)
+        w = al.where(chat(), schemes={"codex"}, which=lambda c: None, exists=lambda p: True, is_dir=lambda p: True)
         self.assertEqual(w["primary"], {"href": f"codex://threads/{THREAD}", "label": "باز کردن همین چت در Codex", "exact": True})
         self.assertEqual(w["note"], "")
         self.assertEqual(w["resume"], {"cmd": f"codex resume {THREAD}", "available": False, "href": "hamzaban://resume?tag=CX-9ZZ99"})
@@ -138,6 +138,30 @@ class Where(unittest.TestCase):
         self.assertIsNone(w["primary"])
         self.assertEqual((w["reveal_href"], w["folder_href"]), ("", ""))
         self.assertEqual(w["app_fa"], "Codex")           # the agent's own display name, since no application is known
+
+    def test_what_is_gone_is_said_and_not_offered(self):
+        w = al.where(chat(), schemes={"codex"}, which=lambda c: None, exists=lambda p: False, is_dir=lambda p: False)
+        self.assertFalse(w["reveal"] or w["folder"])
+        self.assertTrue(w["file_missing"] and w["folder_missing"])
+        self.assertEqual((w["reveal_href"], w["folder_href"], w["file"]), ("", "", ""))
+        self.assertIsNotNone(w["primary"], "the chat itself can still be opened in the application")
+
+    def test_a_log_that_codex_has_packed_is_found_by_its_zst_name(self):
+        w = al.where(chat(path=r"C:\codex\sessions\rollout-1.jsonl"), schemes={"codex"}, which=lambda c: None,
+                     exists=lambda p: p.endswith(".jsonl.zst"), is_dir=lambda p: True)
+        self.assertEqual((w["reveal"], w["packed"], w["file_missing"]), (True, True, False))
+        self.assertEqual(w["file"], r"C:\codex\sessions\rollout-1.jsonl.zst")
+        self.assertEqual(w["reveal_href"], "hamzaban://reveal?tag=CX-9ZZ99")
+
+    def test_a_session_folder_counts_as_the_chats_place(self):
+        w = al.where(chat(tag="CS-3CCCC", agent="cos", entry="chat-on-steroids", source_id="s1s1s1s1", path=r"C:\cos\sessions\abc"),
+                     exists=lambda p: p == r"C:\cos\sessions\abc", is_dir=lambda p: False)
+        self.assertEqual((w["reveal"], w["packed"], w["file_missing"], w["file"]), (True, False, False, r"C:\cos\sessions\abc"))
+        self.assertEqual(w["reveal_href"], "hamzaban://reveal?tag=CS-3CCCC")
+
+    def test_a_note_in_the_vault_is_never_called_missing(self):
+        w = al.where(chat(path="20-Checkpoints/x.md"), exists=lambda p: False, is_dir=lambda p: False)
+        self.assertEqual((w["reveal"], w["file_missing"]), (False, False))
 
 
 class StartApps(unittest.TestCase):
@@ -224,6 +248,17 @@ class Handle(unittest.TestCase):
         self.go("hamzaban://reveal?tag=CX-9ZZ99")
         self.assertEqual(self.popen.calls, [((f'explorer.exe /select,"{self.log}"',), {})])
 
+    def test_reveal_selects_a_session_folder_too(self):
+        self.reg = FakeRegistry(self.rows + [chat(tag="CS-6FOLD", agent="cos", entry="chat-on-steroids", source_id="s2s2s2s2", path=str(self.work), cwd="")])
+        self.go("hamzaban://reveal?tag=CS-6FOLD")
+        self.assertEqual(self.popen.calls, [((f'explorer.exe /select,"{self.work}"',), {})])
+
+    def test_reveal_finds_a_log_that_codex_has_packed(self):
+        (self.tmp / "packed.jsonl.zst").write_bytes(b"z")
+        self.reg = FakeRegistry(self.rows + [chat(tag="CX-5PACK", path=str(self.tmp / "packed.jsonl"), cwd=str(self.work))])
+        self.go("hamzaban://reveal?tag=CX-5PACK")
+        self.assertEqual(self.popen.calls, [((f'explorer.exe /select,"{self.tmp / "packed.jsonl.zst"}"',), {})])
+
     def test_a_file_that_is_gone_or_was_never_there_is_a_message_not_a_crash(self):
         for tag in ("CS-3CCCC", "CA-2BBBB"):
             with self.subTest(tag=tag), self.assertRaises(al.LinkError):
@@ -295,6 +330,9 @@ class TheWherePanel(unittest.TestCase):
                "last_assistant": "", "from_n": 53, "to_n": 53, "current": True}]
 
     def setUp(self):
+        for extra in (mock.patch.object(al, "_exists", lambda p: True), mock.patch.object(al, "_is_dir", lambda p: True)):     # the made-up paths of these chats count as present
+            extra.start()
+            self.addCleanup(extra.stop)
         patch = mock.patch.object(al, "scheme_registered", lambda name, reg=None: True)
         patch.start()
         self.addCleanup(patch.stop)
@@ -319,6 +357,21 @@ class TheWherePanel(unittest.TestCase):
         self.assertNotIn("<img", html)
         self.assertNotIn("<script>", html)
         self.assertIn("&lt;img", html)
+
+    def test_a_file_or_folder_that_is_gone_is_said_and_gets_no_button(self):
+        with mock.patch.object(al, "_exists", lambda p: False), mock.patch.object(al, "_is_dir", lambda p: False):
+            html = control_room.where_html(chat())
+        self.assertEqual(html.count("دیگر در این مسیر نیست"), 2)
+        self.assertNotIn("hamzaban://reveal", html)
+        self.assertNotIn("hamzaban://folder", html)
+        self.assertIn("C:\\work\\demo", html)               # the path is still shown, and can be copied
+
+    def test_a_packed_log_is_shown_under_the_name_it_has_now(self):
+        with mock.patch.object(al, "_exists", lambda p: p.endswith(".zst")):
+            html = control_room.where_html(chat())
+        self.assertIn("r.jsonl.zst", html)
+        self.assertIn("فشرده‌شده", html)
+        self.assertIn('href="hamzaban://reveal?tag=CX-9ZZ99"', html)
 
     def test_a_chat_without_topics_says_so_and_a_missing_module_removes_the_panel(self):
         self.assertIn("موضوع‌بندی نشده", control_room.where_html(chat()))

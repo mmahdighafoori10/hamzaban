@@ -508,6 +508,7 @@ def where_html(c: dict) -> str:
     if app_links is None:
         return ""
     w = app_links.where(c)
+    gone = ' <small>دیگر در این مسیر نیست</small>'
     head = f'<div class="wapp"><div><b>{esc(w["app_fa"])}</b>'
     if w["entry"]:
         head += f'<small>ورودی ثبت‌شده در لاگ: <bdi dir="ltr">{esc(w["entry"])}</bdi></small>'
@@ -519,10 +520,11 @@ def where_html(c: dict) -> str:
     rows = [("عنوان چت", f'{_bidi(c["title"])}'), ("زمان", _span(c.get("first_ts", ""), c.get("last_ts", "")) or "—")]
     if c.get("cwd"):
         rows.append(("پوشهٔ کار", f'<bdi dir="ltr">{esc(c["cwd"])}</bdi> <button class="btn" data-copy="{esc(c["cwd"])}">کپی</button>'
-                     + (f' <a class="btn" href="{esc(w["folder_href"])}">باز کردن پوشه</a>' if w["folder_href"] else "")))
+                     + (f' <a class="btn" href="{esc(w["folder_href"])}">باز کردن پوشه</a>' if w["folder_href"] else gone if w["folder_missing"] else "")))
     if c.get("path"):
-        rows.append(("فایل چت", f'<bdi dir="ltr">{esc(c["path"])}</bdi> <button class="btn" data-copy="{esc(c["path"])}">کپی</button>'
-                     + (f' <a class="btn" href="{esc(w["reveal_href"])}">نمایش در Explorer</a>' if w["reveal"] and w["reveal_href"] else "")))
+        rows.append(("فایل چت", f'<bdi dir="ltr">{esc(w["file"] or c["path"])}</bdi> <button class="btn" data-copy="{esc(w["file"] or c["path"])}">کپی</button>'
+                     + (f' <a class="btn" href="{esc(w["reveal_href"])}">نمایش در Explorer</a>' if w["reveal_href"] else gone if w["file_missing"] else "")
+                     + (" <small>فشرده‌شده (zst)</small>" if w["packed"] else "")))
     if c.get("source_id"):
         rows.append(("شناسهٔ چت", f'<bdi dir="ltr">{esc(c["source_id"])}</bdi> <button class="btn" data-copy="{esc(c["source_id"])}">کپی</button>'))
     out.append('<dl class="wl">' + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in rows) + "</dl>")
