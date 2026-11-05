@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security problem
+    url: https://github.com/security/advisories
+    about: Please use the repository's Security tab → "Report a vulnerability", not a public issue.

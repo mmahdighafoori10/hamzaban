@@ -1,0 +1,51 @@
+name: Bug report
+description: Something does not work as described
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks. **Do not paste real chats, notes, keys or paths with your name.** Fake data is enough to reproduce almost everything.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: System
+      options: [Windows 11, Windows 10, macOS (experimental), Linux (experimental)]
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "python --version"
+    validations:
+      required: true
+  - type: checkboxes
+    id: agents
+    attributes:
+      label: Agents involved
+      options:
+        - label: Claude Code
+        - label: Codex
+        - label: Claude Desktop
+        - label: Chat On Steroids
+        - label: a web chat (ChatGPT, Gemini, claude.ai)
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `python install.py --doctor`
+      description: Read it first; it can contain folder names.
+      render: text
+  - type: checkboxes
+    id: clean
+    attributes:
+      label: Before you send
+      options:
+        - label: I checked that nothing above contains a secret, a private chat or a path with my name.
+          required: true

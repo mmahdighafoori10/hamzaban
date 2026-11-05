@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Editors and systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Databases and backups never belong in the project
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+*.bak-*
+*.tmp-*
+
+# Nothing from a real installation belongs in the project: if an installed engine is ever copied back over engine/, this keeps its data out
+/engine/logs/
+/engine/backups/
+/engine/skills-src/
+/engine/topics.json
+/engine/suite-skills.json
+/engine/autosync-*.json
+/engine/autosync-notice.md
+/engine/chats-status.json
+/engine/capture-*.json
+/engine/capture-service.pid
+/engine/dashboard-state.json
+/engine/hamzaban-state.json
+/engine/native-memory-state.json
+/engine/skills-matrix.json
+
+# A Vault is somebody's private notes, never part of this project
+/00-Context/
+/00-Dashboard/
+/10-Facts/
+/10-Projects/
+/20-Checkpoints/
+/30-Pending/
+/40-Conversation-Capture/
+/50-Handoff/
+/60-Chats/

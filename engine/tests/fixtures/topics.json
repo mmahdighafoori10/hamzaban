@@ -1,0 +1,10 @@
+{
+  "signals": {
+    "Gamma": {
+      "strong": ["robotarm", "ربات گاما"],
+      "medium": ["servo", "سروو"],
+      "weak": ["موتور"]
+    }
+  },
+  "ignore_aliases": ["gamma"]
+}

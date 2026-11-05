@@ -1,0 +1,22 @@
+name: Feature request
+description: A new agent dialect, a chat reader, a translation, or an idea
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like, and what problem does it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: format
+    attributes:
+      label: For a new agent — where does it keep its chats and memory, and in what format?
+      description: File paths and a few lines of fake sample data are ideal.
+  - type: checkboxes
+    id: fit
+    attributes:
+      label: Fit
+      options:
+        - label: It works offline with the Python standard library only (no server, no dependency).
+          required: true
