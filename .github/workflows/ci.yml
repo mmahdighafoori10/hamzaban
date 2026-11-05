@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} · Python ${{ matrix.python }}${{ matrix.experimental && ' (experimental)' || '' }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, python: "3.10", experimental: false }
+          - { os: windows-latest, python: "3.13", experimental: false }
+          - { os: ubuntu-latest, python: "3.10", experimental: true }
+          - { os: ubuntu-latest, python: "3.13", experimental: true }
+          - { os: macos-latest, python: "3.13", experimental: true }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Engine tests
+        run: python -X utf8 -B -m unittest discover -s engine/tests
+      - name: Installer tests
+        run: python -X utf8 -B -m unittest discover -s tests
+      - name: Installer dry run
+        run: python -X utf8 install.py --vault "${{ runner.temp }}/hamzaban-vault" --dry-run --yes
