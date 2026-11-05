@@ -9,7 +9,7 @@ Claude Code، Codex، ChatGPT، Gemini و بقیه هرکدام به شیوهٔ 
 
 سرور، حساب کاربری و کد شبکه ندارد. فقط کتابخانهٔ استاندارد Python. همه‌چیز در پوشه‌ای است که خودت می‌خوانی، ویرایش می‌کنی و هر وقت خواستی پاک می‌کنی.
 
-[English](README.md) · [نحوهٔ کار](docs/how-it-works.md) · [عامل‌ها](docs/agents.md) · [حریم خصوصی](docs/privacy.md) · [رفع مشکل](docs/troubleshooting.md)
+[English](README.md) · [نحوهٔ کار](docs/how-it-works.md) · [عامل‌ها](docs/agents.md) · [بستهٔ انتقال](docs/continuity.md) · [حریم خصوصی](docs/privacy.md) · [رفع مشکل](docs/troubleshooting.md)
 
 ---
 
@@ -19,6 +19,7 @@ Claude Code، Codex، ChatGPT، Gemini و بقیه هرکدام به شیوهٔ 
 - **تگ برای هر چت و هر موضوع**: `CC-7K3QF` یک چت است و `CC-7K3QF/T3` موضوع سومِ داخلش. تگ‌ها از لاگ خودِ عامل‌ها (Claude Code، Codex، Chat On Steroids) خوانده می‌شوند.
 - **تشخیص قطع‌شدن**: می‌خواند چت چطور تمام شده. نوبتی که با «You've hit your usage limit … try again at 2:32 AM» تمام شد «قطع‌شده» است و ساعت برگشتن توکن هم کنارش نوشته می‌شود. چتی که فقط یک خطای گذرا داشت و ادامه پیدا کرد قطع‌شده حساب نمی‌شود.
 - **ادامه در هر عامل**: ابزار `memory_handoff` (MCP) یا مهارت `hamzaban-continue` تگ را به یک متن ادامه تبدیل می‌کند: چرا قطع شد، موضوع‌ها، آخرین درخواست و پاسخ، فایل‌هایی که عوض شد.
+- **بکاپ قابل‌انتقال از هر پروژه یا چت**: دستور `python .ai-memory/hamzaban/cli.py continuity write --dir <پروژه>` پوشهٔ `project-continuity/` می‌سازد (README، قواعد تو کلمه‌به‌کلمه، زمینه، گزارش تاریخ‌دار، تصمیم‌ها، گزارش تست، سؤال‌های باز) که هر جمله‌اش برچسب مدرک دارد (`CONFIRMED`، `INFERRED`، `UNKNOWN` ...). عامل بعدی یا کامپیوتر دیگر می‌تواند از همان‌جا ادامه بدهد. مهارت `hamzaban-continuity` بخش‌هایی را که به نگاه‌کردن به کد نیاز دارند به عامل می‌سپارد، و `parity` بررسی می‌کند فایل‌های دستور عامل‌ها (`CLAUDE.md`، `AGENTS.md`، `GEMINI.md`) همگی قواعد تو را دارند. جزئیات: [docs/continuity.md](docs/continuity.md).
 - **حافظهٔ داخلی خودِ عامل‌ها هم ترجمه می‌شود**: یادداشت‌هایی که Claude Code برای خودش نگه می‌دارد و حافظه‌هایی که Codex استخراج می‌کند به‌صورت پیشنهاد در `30-Pending` می‌آیند. تا تأیید نکنی هیچ‌چیز «حقیقت» نمی‌شود.
 - **مهارت‌های مشترک**: مهارتی که در یک عامل نصب کنی به بقیه کپی می‌شود؛ هرگز چیزی پاک یا جایگزین نمی‌شود.
 - **اتاق کنترل**: یک صفحهٔ HTML آفلاین با چت‌های فعال، چت‌های قطع‌شده (با دکمهٔ کپی دستور ادامه)، جدول مهارت‌ها و مسیر جریان حافظه.
@@ -42,6 +43,7 @@ Claude Code، Codex، ChatGPT، Gemini و بقیه هرکدام به شیوهٔ 
 - در چت تازهٔ Claude Code یا Codex بگو «ادامه بده از چت قبلی» یا «ادامه بده از CX-7K3QF».
 - اتاق کنترل: `00-Dashboard/control-room.html` (روی ویندوز `CONTROL-ROOM.cmd` در پوشهٔ `.ai-memory`).
 - پیشنهادها: `python .ai-memory/pending.py list` و سپس `approve <id>` یا `reject <id>`.
+- قابل‌انتقال‌کردن یک کار یا چت: به عامل بگو «پکیج انتقال برای این پروژه بساز» یا `python .ai-memory/hamzaban/cli.py continuity write --dir <پروژه>` را اجرا کن. هماهنگی فایل‌های دستور عامل‌ها: `python .ai-memory/hamzaban/cli.py parity --dir <پروژه> --home`.
 - بستن چت وب: به عامل بگو «جمع‌بندی برای حافظه»؛ یک بلوک `hamzaban-close` می‌نویسد. کپی کن و `HAMZABAN-CLOSE.cmd` را اجرا کن.
 - قواعدت: فایل `00-Context/Harness.md` را ویرایش کن.
 

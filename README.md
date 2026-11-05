@@ -9,7 +9,7 @@ usage limit or a closed window is never lost: open any agent and say *"continue 
 
 There is no server, no account and no network code. Python standard library only. Everything stays in a folder you can read, edit and delete.
 
-[فارسی](README.fa.md) · [How it works](docs/how-it-works.md) · [Agents](docs/agents.md) · [Privacy](docs/privacy.md) · [Troubleshooting](docs/troubleshooting.md)
+[فارسی](README.fa.md) · [How it works](docs/how-it-works.md) · [Agents](docs/agents.md) · [Continuity](docs/continuity.md) · [Privacy](docs/privacy.md) · [Troubleshooting](docs/troubleshooting.md)
 
 ---
 
@@ -21,6 +21,7 @@ There is no server, no account and no network code. Python standard library only
 | **Tags for every chat and topic** | `CC-7K3QF` is a chat, `CC-7K3QF/T3` is the third topic inside it. Tags are read from the agents' own logs (Claude Code, Codex, Chat On Steroids), so they exist even for chats you never "saved". |
 | **Cut-off detection** | It reads how a chat ended. A Codex turn that stopped with *"You've hit your usage limit … try again at 2:32 AM"* shows as **cut off**, with the time the tokens come back. A chat that only hit a hiccup and carried on does not. |
 | **Continue anywhere** | `memory_handoff` (MCP) or the `hamzaban-continue` skill turns a tag into a resume text: why it stopped, the topics, the last request and answer, the files it changed. |
+| **A portable backup of any project or chat** | `python .ai-memory/hamzaban/cli.py continuity write --dir <project>` writes a `project-continuity/` folder (README, your rules word for word, context, a dated handoff, decisions, a test log, open questions) with evidence labels (`CONFIRMED`, `INFERRED`, `UNKNOWN` ...), so another agent or another computer can pick the work up cold. The `hamzaban-continuity` skill has an agent finish the parts that need a look at the code. `parity` checks that `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` and the rest all carry your rules. See [docs/continuity.md](docs/continuity.md). |
 | **The agents' own memories, translated** | Notes Claude Code keeps for itself and the memories Codex extracts are proposed to your notebook (`30-Pending`). Nothing becomes a fact until you approve it. |
 | **Shared skills** | A skill you install in one agent is copied to the others. It never deletes and never overwrites a skill that differs; a conflict becomes a note for you. |
 | **A control room** | One offline HTML page: active chats, cut-off chats with a *copy "continue" command* button, the skills matrix, and how the memory flows. |
@@ -58,7 +59,7 @@ python install.py --uninstall            remove the background task, hooks and M
 What the installer does, in order. The first three stay inside the Vault; every later step asks first (or use `--yes`):
 
 1. folders and a short Welcome note in the Vault; 2. the engine into `<Vault>/.ai-memory` (an older copy is backed up first);
-3. a starter rules file `00-Context/Harness.md` if you have none; 4. **skills**: `hamzaban-continue`, `hamzaban-close`, `infinite-context`;
+3. a starter rules file `00-Context/Harness.md` if you have none; 4. **skills**: `hamzaban-continue`, `hamzaban-continuity`, `hamzaban-close`, `infinite-context`;
 5. **mcp**: the memory server `infinity-memory` in Claude Code, Codex and Claude Desktop (their config files are backed up first);
 6. **hooks**: Claude Code hooks that record chats and hand over context (backup first);
 7. **schedule**: a background task once a minute, no admin rights (Windows Task Scheduler; launchd or cron elsewhere);
@@ -71,6 +72,7 @@ Every change outside the Vault is backed up first and logged to `<Vault>/.ai-mem
 - **Start a new chat** in Claude Code or Codex and say *"continue from my last chat"*, or *"continue from CX-7K3QF"* (a tag from the control room).
 - **Open the control room**: `00-Dashboard/control-room.html` in your Vault (on Windows: `CONTROL-ROOM.cmd` in `.ai-memory`). Each chat card has a *copy "continue" command* button.
 - **Review proposals**: `python .ai-memory/pending.py list`, then `approve <id>` or `reject <id>`. Facts, decisions, the agents' own memories and closing blocks all wait here.
+- **Make a work or a chat transferable**: ask an agent *"make a continuity package for this project"*, or run `python .ai-memory/hamzaban/cli.py continuity write --dir <project>`. Check that your agents' instruction files agree with `python .ai-memory/hamzaban/cli.py parity --dir <project> --home`.
 - **Close a web chat**: ask the agent *"wrap up for memory"*; it writes one `hamzaban-close` block. Copy it and run `HAMZABAN-CLOSE.cmd` (Windows, reads the clipboard) or `python .ai-memory/hamzaban/cli.py ingest <file>`.
 - **Your rules**: edit `00-Context/Harness.md`. Every agent that reads a pack gets them as *your* instructions; everything else it reads is labelled reference data.
 

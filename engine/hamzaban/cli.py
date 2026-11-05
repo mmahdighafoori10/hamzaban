@@ -8,6 +8,8 @@
   python hamzaban/cli.py refresh [--force]                rebuild 50-Handoff/ (also done automatically)
   python hamzaban/cli.py ingest FILE|-                    read closing blocks from a chat export and stage them
   python hamzaban/cli.py export --to gemini --dir PROJECT write the agent's own file into a project (never overwrites)
+  python hamzaban/cli.py continuity write --dir PROJECT [--topic T] [--chat TAG]   a portable project-continuity/ package (7 files)
+  python hamzaban/cli.py parity [--dir PROJECT] [--home]  do the agents' harness files (CLAUDE.md, AGENTS.md, GEMINI.md ...) agree?
   python hamzaban/cli.py status | check | init | install-skill
 """
 from __future__ import annotations
@@ -287,6 +289,25 @@ def cmd_install_skill(args) -> int:
     return 0
 
 
+def _continuity(args, sub: str | None) -> int:
+    """`continuity` and `parity` live in the engine's own continuity.py (it needs the git tool, which this package never starts)."""
+    import continuity
+    rest = list(args.rest)
+    if rest[:1] == ["--"]:
+        rest = rest[1:]
+    return continuity.main(["--vault", str(_vault(args)), *([sub] if sub else []), *rest])
+
+
+def cmd_continuity(args) -> int:
+    return _continuity(args, None)
+
+
+def cmd_parity(args) -> int:
+    args.rest = [*(["--dir", args.dir] if args.dir else []), *(["--topic", args.topic] if args.topic else []),
+                 *(["--home"] if args.home else []), *(["--strict"] if args.strict else [])]
+    return _continuity(args, "parity")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="hamzaban", description=f"{NAME} {VERSION}: one shared language for your AI agents")
     ap.add_argument("--vault", help="Vault folder (default: the one this engine lives in)")
@@ -312,6 +333,13 @@ def main(argv=None) -> int:
     p.add_argument("--from-pack", dest="from_pack")
     p.add_argument("--lang", choices=["en", "fa"])
     p.add_argument("--max-chars", dest="max_chars", type=int)
+    p = sub.add_parser("continuity", help="write a portable project-continuity/ package for a project or a chat (write --dir ...)")
+    p.add_argument("rest", nargs=argparse.REMAINDER)
+    p = sub.add_parser("parity", help="do the agents' harness files agree with your rules? (--dir PROJECT and/or --home)")
+    p.add_argument("--dir", help="a project folder")
+    p.add_argument("--home", action="store_true", help="also check ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md")
+    p.add_argument("--topic")
+    p.add_argument("--strict", action="store_true", help="exit 1 when a generated file is stale or the files come from different snapshots")
     sub.add_parser("status")
     sub.add_parser("check", help="self-test on the real vault")
     sub.add_parser("init", help="create 00-Context/Harness.md if it does not exist")
@@ -320,7 +348,8 @@ def main(argv=None) -> int:
                    help="the Vault path as agents on your own computer see it (default: the path this command runs with)")
     args = ap.parse_args(argv)
     handlers = {"targets": cmd_targets, "pack": cmd_pack, "refresh": cmd_refresh, "ingest": cmd_ingest, "export": cmd_export,
-                "status": cmd_status, "check": cmd_check, "init": cmd_init, "install-skill": cmd_install_skill}
+                "status": cmd_status, "check": cmd_check, "init": cmd_init, "install-skill": cmd_install_skill,
+                "continuity": cmd_continuity, "parity": cmd_parity}
     try:
         return handlers[args.cmd](args)
     except (OSError, ValueError) as exc:

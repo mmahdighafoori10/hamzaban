@@ -123,9 +123,47 @@ Read-only on the agents' folders (the SQLite file is read from a temporary copy)
 pass, nothing proposed twice (pending, rejected and approved all count as known). Agents that keep no readable memory
 (ChatGPT, Gemini, Claude.ai) join through the closing block instead.
 
+## 4c. Continuity packages (a portable backup of one project or one chat)
+
+The pack is the shared notebook. A *continuity package* goes the other way: a snapshot of **one** project or **one** chat as seven
+Markdown files in a folder (`project-continuity/`), readable cold by any agent on any machine. `continuity.py` makes it
+(`python hamzaban/cli.py continuity write --dir PROJECT [--topic T] [--chat TAG]`). It is not part of the pack format and never
+feeds back into it.
+
+| File | Holds |
+|---|---|
+| `README.md` | scope, date, reading order, a privacy note |
+| `INSTRUCTIONS.md` | the user's standing rules word for word (the same text for every agent), the project's own rule files, discovered commands |
+| `CONTEXT.md` | project note, README opening, approved facts, latest checkpoint, the chat and its topics, git and manifest facts, tools |
+| `HANDOFF-YYYY-MM-DD.md` | the dated, standalone report: state, work done and in progress, prioritised remaining work, how to resume, a starter prompt that names this exact file |
+| `DECISIONS.md` | decisions with their status and source |
+| `TEST-LOG.md` | what was run and what was not |
+| `OPEN-QUESTIONS.md` | what is still unknown, who can settle it |
+
+Every statement carries one of five labels: `CONFIRMED`, `INFERRED`, `UNKNOWN`, `NOT TESTED`, `NEEDS VERIFICATION`. What only an
+inspection of the code can answer is left as `TODO(agent)` for the `hamzaban-continuity` skill. The generator never reads or judges source
+code. Its read-only inputs are the Vault, the chat registry, git state (`rev-parse`, `status --porcelain`, `remote -v`, `log`; remote
+credentials stripped, `core.fsmonitor` off, 10 s timeout), manifest *names* and the opening of the project's README.
+
+Only what belongs to the subject goes in. Chats and waiting proposals of other projects are counted, never quoted. With no topic given
+the subject comes from the chat's project or the folder name; it never falls back to "the newest checkpoint of anything". A chat whose
+working folder is not the project folder produces a warning.
+
+Ownership: `.hamzaban-continuity.json` keeps a hash of every file as written. A file is rewritten only while it still matches; a file
+someone edited is kept and the fresh version is written beside it as `<name>.generated.md`. Output is redacted (Vault note paths are
+kept readable), closing markers are neutralised, symlinked output is refused, and the tool warns when the folder sits inside a git
+repository without being ignored. With no `--dir` the package goes to `50-Handoff/continuity/<name>/`.
+
+`continuity.py parity [--dir PROJECT] [--home]` is the check behind "one language for every harness". For the files an agent loads by
+itself (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md`, `.cursor/rules/hamzaban.mdc`, and with `--home` the
+user's `~/.claude`, `~/.codex`, `~/.gemini` ones) it reports `CURRENT` (generated, every standing rule present), `STALE`, `OWN`
+(written by someone else, with how many rules appear verbatim) or `MISSING`, and `MIXED` when generated files carry different `_pack`
+ids. ChatGPT and Claude.ai keep their instructions in a web page and cannot be read from disk.
+
 ## 5. Guarantees and limits
 
-Guarantees (each has tests): writes only under `50-Handoff/`, `30-Pending/`, `20-Checkpoints/` and the engine folder;
+Guarantees (each has tests): writes only under `50-Handoff/`, `30-Pending/`, `20-Checkpoints/` and the engine folder
+(`continuity.py` also writes inside the one output folder you name, and nowhere else);
 never deletes; refuses symlinked output folders; atomic and idempotent writes; stdlib only, no network, no code
 execution from data files; Python 3.10 compatible; UTF-8 with Persian and ZWNJ preserved.
 
