@@ -422,11 +422,13 @@ def shortcuts_supported() -> bool:
 
 def shortcuts_step(engine: Path, h: Path, ui: Ui, remove: bool = False) -> list[str]:
     """Windows: a Start-menu entry and a desktop shortcut with the Hamzaban icon, and the hamzaban: link the control room's buttons use."""
+    verb = "remove" if remove else "install"
+    if ui.dry:          # a dry run copies nothing into the Vault, so the engine that would be installed is the one next to this installer
+        if not ((engine / "shortcuts.py").is_file() or (ENGINE_SRC / "shortcuts.py").is_file()):
+            return ["shortcuts.py is missing from the engine folder; nothing would be done"]
+        return [f"would {verb} the Start-menu entry, the desktop shortcut and the hamzaban: link (this user only, no administrator rights)"]
     if not (engine / "shortcuts.py").is_file():
         return ["shortcuts.py is missing from the engine folder; nothing done"]
-    verb = "remove" if remove else "install"
-    if ui.dry:
-        return [f"would {verb} the Start-menu entry, the desktop shortcut and the hamzaban: link (this user only, no administrator rights)"]
     code, out, err = run_engine(engine, h, "shortcuts.py", verb)
     if code != 0:
         return [f"failed: {(err or out).strip()[:200]}"]

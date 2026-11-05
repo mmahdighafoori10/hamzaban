@@ -202,6 +202,10 @@ class ShortcutsStep(Sandbox):
         dry = install.Ui(yes=True, dry=True, out=lambda *_: None, interactive=False)
         with mock.patch.object(install, "run_engine", lambda *a: self.fail("a dry run starts nothing")):
             self.assertIn("would install", install.shortcuts_step(eng, self.home, dry)[0])
+            not_yet = self.tmp / "vault" / ".ai-memory"         # a dry run copies nothing: the engine is not in the Vault yet
+            self.assertIn("would install", install.shortcuts_step(not_yet, self.home, dry)[0])
+            with mock.patch.object(install, "ENGINE_SRC", self.tmp / "nowhere"):
+                self.assertIn("missing", install.shortcuts_step(not_yet, self.home, dry)[0])
 
 
 class UpdateAndUninstall(Sandbox):
