@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -279,12 +280,15 @@ def launch_app(key: str, popen=subprocess.Popen, apps: dict[str, str] | None = N
     spec = APPS.get(key)
     if not spec:
         raise LinkError("برای این چت برنامه‌ای شناخته نیست.")
+    if sys.platform == "darwin":
+        names = ("Codex", "ChatGPT") if key == "codex" else spec["names"]
+        for name in names:
+            if any((root / (name + ".app")).is_dir() for root in (Path("/Applications"), Path.home() / "Applications")):
+                popen(["open", "-a", name])
+                return name
     found = find_app(key, apps)
     if found and sys.platform.startswith("win"):
         popen(["explorer.exe", "shell:AppsFolder\\" + found[1]])
-        return found[0]
-    if found and sys.platform == "darwin":
-        popen(["open", "-a", found[0]])
         return found[0]
     if spec["web"]:
         (startfile or (os.startfile if sys.platform.startswith("win") else lambda u: popen(["open" if sys.platform == "darwin" else "xdg-open", u])))(spec["web"])
@@ -295,7 +299,10 @@ def launch_app(key: str, popen=subprocess.Popen, apps: dict[str, str] | None = N
 def open_terminal(cwd: Path, command: str, popen=subprocess.Popen, which=shutil.which) -> None:
     folder = str(cwd) if cwd.is_dir() else str(Path.home())
     wt = which("wt.exe") or which("wt")
-    if wt:
+    if sys.platform == "darwin":
+        script = 'on run argv\n  tell application "Terminal"\n    activate\n    do script (item 1 of argv)\n  end tell\nend run'
+        popen(["osascript", "-e", script, "--", "cd " + shlex.quote(folder) + " && " + command])
+    elif wt:
         popen([wt, "-d", folder, "powershell.exe", "-NoExit", "-Command", command])
     elif sys.platform.startswith("win"):
         popen(["cmd.exe", "/k", command], cwd=folder, creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))

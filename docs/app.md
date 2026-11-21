@@ -1,10 +1,21 @@
-# The application: icon, shortcuts and "where is this chat?"
+# The application: Windows and macOS
 
 On Windows Hamzaban installs like an application: its own icon, an entry in the Start menu, a shortcut on the desktop and its own window. In that window every chat has a
 **کجاست؟** ("where is it?") button. It tells you which application the chat took place in and which part of the chat to look at, and takes you there as far as that
 application allows.
 
-macOS and Linux get no shortcuts and no `hamzaban:` link yet. The control room is still the HTML file in your Vault, and its panel still names the application and the part of the chat and has the copy buttons.
+On macOS, Hamzaban comes as an application inside a DMG. It shows the same local control room in a native WebKit window and handles `hamzaban:` links. Linux uses the HTML file in the Vault.
+
+## Installing the macOS app
+
+1. Install Python 3.10 or newer and download the DMG from [GitHub Releases](https://github.com/mmahdighafoori10/hamzaban/releases).
+2. Open the DMG and drag Hamzaban into Applications.
+3. Open Hamzaban. On first launch, select a new or existing Vault, then choose which agent integrations to install. The installer backs up older engine files and external configuration before updating them.
+4. An existing command-line installation is detected from the install record. If its version is older, the app offers to update it while retaining the previously selected integrations.
+
+The DMG is built on macOS in GitHub Actions. A downloadable DMG is attached to each successful workflow run; the first successful push of a new version to main creates a tag and publishes the DMG in GitHub Releases. The app bundles the Hamzaban engine, skills and installer, but Python is a prerequisite. It is ad-hoc signed and not notarized with an Apple Developer ID. If Gatekeeper blocks the first launch, Control-click the app in Applications, choose Open, and confirm.
+
+Build it locally on a Mac with Xcode Command Line Tools using `sh macos/build-dmg.sh`. The output is `dist/Hamzaban-<version>-macOS.dmg`.
 
 ## What the installer adds (Windows)
 
@@ -39,16 +50,16 @@ Every chat card, every part (topic) of a chat and every entry of the *now* list 
   Chat On Steroids; for chats that came in through a closing block, Claude, ChatGPT or Gemini;
 - the chat's **title**, the **time** it ran, its **working folder**, the **chat file** (the agent's own log) and the chat's **id** in that application, each with a copy button;
 - **which part of the chat**: every part lists the numbers of your messages it covers ("messages 14 to 22 of your 40"), when it ran, your first request and the last result in it, and a **search phrase**, the first
-  words of that request, with a copy button. In the application, press Ctrl+F and paste it;
+  words of that request, with a copy button. In the application, press Ctrl+F on Windows or Command-F on macOS and paste it;
 - the buttons that make sense for that chat:
 
 | Button | What it does | Offered when |
 |---|---|---|
 | open this very chat | opens the chat in the Codex app through `codex://threads/<id>`, the link Codex documents | a Codex-app chat, and the `codex:` link is registered on this computer |
-| open the application | starts the application from the Start menu; for a web chat, opens the website | the chat has an application or a website, and no link to the chat itself |
-| show in Explorer | opens Explorer with the chat's log selected (a Codex log that has been packed into `.jsonl.zst` is found too; for Chat On Steroids it is the session folder) | the log is still there |
+| open the application | starts the application from the Start menu on Windows or Applications on macOS; for a web chat, opens the website | the chat has an application or a website, and no link to the chat itself |
+| show in Explorer or Finder | selects the chat's log (a Codex log that has been packed into `.jsonl.zst` is found too; for Chat On Steroids it is the session folder) | the log is still there |
 | open the folder | opens the chat's working folder | the chat has one, and it still exists |
-| open in a terminal | opens Windows Terminal (or `cmd`) in the working folder and runs `claude --resume <id>` or `codex resume <id>` | a Claude Code or Codex chat whose command is installed; otherwise the command is shown for you to copy |
+| open in a terminal | opens Windows Terminal (or `cmd`) on Windows, or Terminal on macOS, in the working folder and runs `claude --resume <id>` or `codex resume <id>` | a Claude Code or Codex chat whose command is installed; otherwise the command is shown for you to copy |
 
 Honest limits:
 
@@ -61,17 +72,16 @@ Honest limits:
 
 ## The `hamzaban:` link
 
-The buttons that need your computer are links such as `hamzaban://reveal?tag=CC-7K3QF`. Windows hands them to `hamzaban_open.pyw`, which does one of four things:
+The buttons that need your computer are links such as `hamzaban://reveal?tag=CC-7K3QF`. Windows hands them to `hamzaban_open.pyw`; macOS hands them to Hamzaban.app. The handler does one of four things:
 
 | Link | Does |
 |---|---|
 | `hamzaban://app?tag=<tag>` | opens the application the chat belongs to (or its website) |
-| `hamzaban://reveal?tag=<tag>` | shows the chat's log file in Explorer |
+| `hamzaban://reveal?tag=<tag>` | shows the chat's log file in Explorer or Finder |
 | `hamzaban://folder?tag=<tag>` | opens the chat's working folder |
 | `hamzaban://resume?tag=<tag>` | opens a terminal in the working folder and runs the resume command |
 
-(`app` also accepts `?agent=<name>` instead of a tag.) Anything else, an unknown action, an extra parameter, a malformed tag, is refused with a message box. There is no server and no open port: Windows
-starts a short-lived process for each click, and it makes no network connection.
+(`app` also accepts `?agent=<name>` instead of a tag.) Anything else, an unknown action, an extra parameter, a malformed tag, is refused with a message. There is no server and no open port. Each action uses the locally installed engine and makes no network connection.
 
 Why it is safe to have such a link on your computer:
 
@@ -79,11 +89,12 @@ Why it is safe to have such a link on your computer:
 - the tag is looked up in your own chat registry, and the folder, the file, the application and the command all come from there. A tag that is not in your memory does nothing;
 - the resume command is built from a fixed pattern (`claude --resume <id>` or `codex resume <id>`) and the id has to pass a strict check;
 - so a web page that fires such a link at your browser can at most open an application or a folder you already have, or continue one of your own chats, and only when it already knows a valid tag;
-- it is registered for your Windows user only.
+- on Windows, it is registered for your user only; on macOS, the application registers it in its bundle.
 
 ## Limits
 
-- Windows only for now.
+- The macOS app requires macOS 12 or newer and a separately installed Python 3.10 or newer. The DMG has not been notarized, so first launch can require Control-click → Open.
+- Linux has no application bundle or registered link yet.
 - One Windows user at a time: each account installs its own shortcuts and link and uses its own Vault. The background sync task has a single fixed name (`MemorySuiteAutoSync`), so two accounts on
   one computer cannot both schedule it yet.
 - The list of applications comes from the Start menu (`Get-StartApps`) and is remembered for twelve hours in `.ai-memory/app-launchers.json`. An application that is not in the Start menu is not found;

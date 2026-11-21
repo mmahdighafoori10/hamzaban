@@ -499,7 +499,7 @@ def _part_li(c: dict, t: dict) -> str:
             + (f'<small>اولین درخواست در این بخش: {esc(t["first_user"][:160])}</small>' if t.get("first_user") else "")
             + (f'<small>آخرین نتیجهٔ این بخش: {esc(t["last_assistant"][:160])}</small>' if t.get("last_assistant") else "")
             + (f'<div class="btns"><button class="btn" data-copy="{esc(phrase)}">کپی عبارت جست‌وجو</button>'
-               f'<small>در برنامه Ctrl+F بزن و این را بچسبان: <bdi dir="ltr">«{esc(phrase)}»</bdi></small></div>' if phrase else "")
+               f'<small>در برنامه {"⌘F" if sys.platform == "darwin" else "Ctrl+F"} بزن و این را بچسبان: <bdi dir="ltr">«{esc(phrase)}»</bdi></small></div>' if phrase else "")
             + "</li>")
 
 
@@ -523,7 +523,7 @@ def where_html(c: dict) -> str:
                      + (f' <a class="btn" href="{esc(w["folder_href"])}">باز کردن پوشه</a>' if w["folder_href"] else gone if w["folder_missing"] else "")))
     if c.get("path"):
         rows.append(("فایل چت", f'<bdi dir="ltr">{esc(w["file"] or c["path"])}</bdi> <button class="btn" data-copy="{esc(w["file"] or c["path"])}">کپی</button>'
-                     + (f' <a class="btn" href="{esc(w["reveal_href"])}">نمایش در Explorer</a>' if w["reveal_href"] else gone if w["file_missing"] else "")
+                     + (f' <a class="btn" href="{esc(w["reveal_href"])}">نمایش در {"Finder" if sys.platform == "darwin" else "Explorer"}</a>' if w["reveal_href"] else gone if w["file_missing"] else "")
                      + (" <small>فشرده‌شده (zst)</small>" if w["packed"] else "")))
     if c.get("source_id"):
         rows.append(("شناسهٔ چت", f'<bdi dir="ltr">{esc(c["source_id"])}</bdi> <button class="btn" data-copy="{esc(c["source_id"])}">کپی</button>'))
@@ -539,8 +539,11 @@ def where_html(c: dict) -> str:
         out.append('<p class="meta">برنامه‌ها به پیامِ دقیق نمی‌پرند؛ شمارهٔ پیام و عبارت جست‌وجو نشانی‌اند که بتوانی بخش را در خودِ چت پیدا کنی.</p>')
     else:
         out.append('<p class="meta">این چت موضوع‌بندی نشده؛ از زمان‌های بالا و آخرین درخواست در کارت چت استفاده کن.</p>')
-    out.append('<p class="meta">دکمه‌های «باز کردن» و «نمایش» با لینکِ <code>hamzaban:</code> کار می‌کنند؛ اگر چیزی باز نشد، یک‌بار '
-               '<code>python shortcuts.py install</code> را در پوشهٔ .ai-memory اجرا کن.</p>')
+    if sys.platform == "darwin":
+        out.append('<p class="meta">دکمه‌های «باز کردن» و «نمایش» با اپ همزبان و لینکِ <code>hamzaban:</code> کار می‌کنند.</p>')
+    else:
+        out.append('<p class="meta">دکمه‌های «باز کردن» و «نمایش» با لینکِ <code>hamzaban:</code> کار می‌کنند؛ اگر چیزی باز نشد، یک‌بار '
+                   '<code>python shortcuts.py install</code> را در پوشهٔ .ai-memory اجرا کن.</p>')
     return "".join(out)
 
 

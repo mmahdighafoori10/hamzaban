@@ -322,6 +322,37 @@ class Handle(unittest.TestCase):
         self.assertNotIn("boom", messages[1])
 
 
+class MacActions(unittest.TestCase):
+    def setUp(self):
+        patch = mock.patch.object(al.sys, "platform", "darwin")
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.popen = Recorder()
+
+    def test_reveal_and_folder_use_finder(self):
+        path = Path("/tmp/hamzaban-chat.jsonl")
+        al.reveal_file(path, popen=self.popen)
+        al.open_folder(path.parent, popen=self.popen)
+        self.assertEqual(self.popen.calls, [
+            ((["open", "-R", str(path)],), {}),
+            ((["open", str(path.parent)],), {}),
+        ])
+
+    def test_application_prefers_codex_on_mac(self):
+        with mock.patch.object(al.Path, "is_dir", lambda p: str(p).replace("\\", "/") == "/Applications/Codex.app"):
+            self.assertEqual(al.launch_app("codex", popen=self.popen), "Codex")
+        self.assertEqual(self.popen.calls, [((["open", "-a", "Codex"],), {})])
+
+    def test_resume_quotes_the_folder_for_terminal(self):
+        with tempfile.TemporaryDirectory(prefix="hamzaban-mac-") as tmp:
+            folder = Path(tmp) / "a folder's name"
+            folder.mkdir()
+            al.open_terminal(folder, "codex resume abc123", popen=self.popen, which=lambda c: None)
+        args = self.popen.calls[0][0][0]
+        self.assertEqual(args[:2], ["osascript", "-e"])
+        self.assertEqual(args[-1], "cd " + al.shlex.quote(str(folder)) + " && codex resume abc123")
+
+
 class TheWherePanel(unittest.TestCase):
     TOPICS = [{"tag": "CX-9ZZ99/T1", "n": 1, "title": "اولین بخش", "turns": 3, "first_ts": "2026-10-27T09:49:00Z", "last_ts": "2026-10-27T12:22:00Z",
                "first_user": "گزارش جامع انتقال پروژه را آماده کن لطفاً", "last_user": "x", "last_assistant": "بله، آماده شد", "from_n": 41, "to_n": 52,
@@ -345,11 +376,17 @@ class TheWherePanel(unittest.TestCase):
         self.assertIn("پیام‌های شمارهٔ ۴۱ تا ۵۲ از ۷۱ پیامِ تو", html)
         self.assertIn("پیام شمارهٔ ۵۳ از ۷۱ پیامِ تو", html)
         self.assertIn('data-copy="گزارش جامع انتقال پروژه را آماده کن"', html)      # the first seven words: what to search for
-        self.assertIn("Ctrl+F", html)
+        self.assertIn("⌘F" if sys.platform == "darwin" else "Ctrl+F", html)
         self.assertIn('href="hamzaban://reveal?tag=CX-9ZZ99"', html)
         self.assertIn('href="hamzaban://folder?tag=CX-9ZZ99"', html)
         self.assertIn("C:\\work\\demo", html)
         self.assertIn('id="wt-CX-9ZZ99-2"', html)
+
+    def test_mac_panel_names_finder_and_its_search_shortcut(self):
+        with mock.patch.object(control_room.sys, "platform", "darwin"):
+            html = control_room.where_html(chat(topics=self.TOPICS))
+        self.assertIn("⌘F", html)
+        self.assertIn("نمایش در Finder", html)
 
     def test_nothing_from_a_chat_can_inject_markup(self):
         evil = "<img src=x onerror=alert(1)>"

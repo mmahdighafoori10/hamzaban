@@ -24,11 +24,11 @@ There is no server, no account and no network code. Python standard library only
 | **A portable backup of any project or chat** | `python .ai-memory/hamzaban/cli.py continuity write --dir <project>` writes a `project-continuity/` folder (README, your rules word for word, context, a dated handoff, decisions, a test log, open questions) with evidence labels (`CONFIRMED`, `INFERRED`, `UNKNOWN` ...), so another agent or another computer can pick the work up cold. The `hamzaban-continuity` skill has an agent finish the parts that need a look at the code. `parity` checks that `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` and the rest all carry your rules. See [docs/continuity.md](docs/continuity.md). |
 | **The agents' own memories, translated** | Notes Claude Code keeps for itself and the memories Codex extracts are proposed to your notebook (`30-Pending`). Nothing becomes a fact until you approve it. |
 | **Shared skills** | A skill you install in one agent is copied to the others. It never deletes and never overwrites a skill that differs; a conflict becomes a note for you. |
-| **A control room, as an application** | One offline HTML page: active chats, cut-off chats with a *copy "continue" command* button, the skills matrix, and how the memory flows. On Windows it has an icon, a Start-menu entry, a desktop shortcut and its own window, and every chat has a *where is it?* button that names the application the chat took place in and the part of the chat, and opens the application, the file or the folder ([docs/app.md](docs/app.md)). |
+| **A control room, as an application** | One offline HTML page: active chats, cut-off chats with a *copy "continue" command* button, the skills matrix, and how the memory flows. On Windows it has an icon, a Start-menu entry and a desktop shortcut. On macOS it comes as an app in a DMG. Both have their own window and a *where is it?* button on every chat ([docs/app.md](docs/app.md)). |
 
 Honest limits: it moves **text**, not a model's hidden state, tools or logins. A resume text is extracted from a log and is not verified, so the
 receiving agent should check the real files. Topic splitting is heuristic. Web chats (claude.ai, ChatGPT, Gemini) have no local log; they
-join through a *closing block* you copy once. The control room and the tags are written in Persian (RTL); the docs are English and Persian. The shortcuts, the application window and the buttons that open an application or a file are Windows-only for now, and only Codex has a link that opens one exact chat.
+join through a *closing block* you copy once. The control room and the tags are written in Persian (RTL); the docs are English and Persian. The application window and buttons that open an application or a file work on Windows and macOS. Linux still uses the HTML page in a browser. Only Codex has a link that opens one exact chat.
 
 ## Install
 
@@ -39,7 +39,9 @@ You need **Python 3.10 or newer** ([python.org](https://www.python.org/downloads
 1. Download this project (green **Code** button → *Download ZIP*) and unzip it, or `git clone` it.
 2. Double-click **`INSTALL.cmd`**. It asks where your Vault should live and then asks before each change outside it.
 
-**macOS / Linux** (experimental: written to be portable and covered by the same tests, but not yet field-tested the way Windows is)
+**macOS app**: Download the DMG from [GitHub Releases](https://github.com/mmahdighafoori10/hamzaban/releases), open it and drag Hamzaban into Applications. Install Python 3.10 or newer first. On first launch, choose a Vault and the integrations you want. The app is ad-hoc signed and not Apple-notarized; macOS may require Control-click → Open on first launch. See [the app guide](docs/app.md).
+
+**macOS / Linux command-line installer** (experimental: written to be portable and covered by the same tests, but not yet field-tested the way Windows is)
 
 ```bash
 sh install.sh
@@ -98,7 +100,7 @@ Every change outside the Vault is backed up first and logged to `<Vault>/.ai-mem
 ## Using it
 
 - **Start a new chat** in Claude Code or Codex and say *"continue from my last chat"*, or *"continue from CX-7K3QF"* (a tag from the control room).
-- **Open the control room**: on Windows the **Hamzaban همزبان** icon on your desktop or in the Start menu; anywhere, `00-Dashboard/control-room.html` in your Vault. Each chat card has a *copy "continue" command* button and a *where is it?* (کجاست؟) button.
+- **Open the control room**: on Windows the **Hamzaban همزبان** icon on your desktop or in the Start menu; on macOS, Hamzaban in Applications; anywhere, `00-Dashboard/control-room.html` in your Vault. Each chat card has a *copy "continue" command* button and a *where is it?* (کجاست؟) button.
 - **Review proposals**: `python .ai-memory/pending.py list`, then `approve <id>` or `reject <id>`. Facts, decisions, the agents' own memories and closing blocks all wait here.
 - **Make a work or a chat transferable**: ask an agent *"make a continuity package for this project"*, or run `python .ai-memory/hamzaban/cli.py continuity write --dir <project>`. Check that your agents' instruction files agree with `python .ai-memory/hamzaban/cli.py parity --dir <project> --home`, and write the same rules into them with `export --to <agent> --dir <folder> --rules-only` (see [docs/continuity.md](docs/continuity.md)).
 - **Close a web chat**: ask the agent *"wrap up for memory"*; it writes one `hamzaban-close` block. Copy it and run `HAMZABAN-CLOSE.cmd` (Windows, reads the clipboard) or `python .ai-memory/hamzaban/cli.py ingest <file>`.

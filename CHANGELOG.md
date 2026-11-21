@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0 — macOS application
+
+- Added a native macOS window for the existing offline control room, a first-run Vault installer, and handling for the hamzaban: links in chat cards.
+- Added a macOS DMG build on GitHub Actions. Every build uploads a downloadable workflow artifact; the first push of a new version to main creates its tag and GitHub Release with the DMG.
+- The app bundles the Hamzaban source and requires Python 3.10 or newer on the Mac. The DMG is ad-hoc signed and not notarized.
+
 ## Unreleased
 
 **Installing**

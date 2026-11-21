@@ -1,6 +1,6 @@
 # Developing
 
-Python 3.10+, standard library only. There is nothing to build.
+The engine uses Python 3.10+ and its standard library. The macOS application is built with Swift and Apple frameworks on a Mac.
 
 ```text
 install.py                 the installer (stdlib; copies engine/ into <Vault>/.ai-memory)
@@ -10,6 +10,7 @@ engine/                    the code that runs inside a Vault
 skills/                    skills the installer adds ({{VAULT}} and {{ENGINE}} are filled in)
 tests/                     the installer's tests
 tools/                     make_icon.py draws the icon (SVG, PNG, ICO) from a few constants
+macos/                     native app, bundle metadata, and DMG build script
 ```
 
 ## Run the tests
@@ -43,8 +44,11 @@ log into the neutral events documented at the top of that file, plus fixtures in
 1. Update `VERSION` in `engine/hamzaban/__init__.py` and `CHANGELOG.md`.
 2. Run both test suites on Windows, and let CI run them on Linux and macOS.
 3. Run `python install.py --vault <empty folder> --yes --skip schedule --no-open` against a fake home (see `tests/test_install.py`) and open the control room.
-4. Tag the commit `vX.Y.Z` and attach the ZIP GitHub builds from the tag.
+4. Let the macOS DMG workflow build and verify the app on a Mac runner.
+5. Merge the version change into main. The workflow creates tag `vX.Y.Z` and publishes `Hamzaban-X.Y.Z-macOS.dmg` in GitHub Releases when that version has no release yet. The DMG is ad-hoc signed; notarization requires a Developer ID and a separate signing setup.
 
 ## CI
 
 `.github/workflows/ci.yml` runs both suites on Windows (required) and on Ubuntu and macOS (experimental: allowed to fail until they are green) with Python 3.10 and 3.13.
+
+`.github/workflows/macos-dmg.yml` builds on macOS for pull requests, pushes to main, manual runs, and version tags. It verifies the bundle signature and disk image, uploads the DMG as a workflow artifact, and publishes a new version in GitHub Releases when it first reaches main.
