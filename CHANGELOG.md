@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1 — Universal macOS application
+
+- Compile native arm64 (Apple Silicon) and x86_64 (Intel) executables and combine them into one universal Hamzaban.app and DMG.
+- Verify that both architectures are present in the macOS build and GitHub Actions workflow before publishing the release.
+
 ## 1.1.0 — macOS application
 
 - Added a native macOS window for the existing offline control room, a first-run Vault installer, and handling for the hamzaban: links in chat cards.

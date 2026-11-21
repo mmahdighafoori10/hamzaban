@@ -39,7 +39,7 @@ You need **Python 3.10 or newer** ([python.org](https://www.python.org/downloads
 1. Download this project (green **Code** button → *Download ZIP*) and unzip it, or `git clone` it.
 2. Double-click **`INSTALL.cmd`**. It asks where your Vault should live and then asks before each change outside it.
 
-**macOS app**: Download the DMG from [GitHub Releases](https://github.com/mmahdighafoori10/hamzaban/releases), open it and drag Hamzaban into Applications. Install Python 3.10 or newer first. On first launch, choose a Vault and the integrations you want. The app is ad-hoc signed and not Apple-notarized; macOS may require Control-click → Open on first launch. See [the app guide](docs/app.md).
+**macOS app**: Download the DMG from [GitHub Releases](https://github.com/mmahdighafoori10/hamzaban/releases), open it and drag Hamzaban into Applications. Version 1.1.1 and later supports Apple Silicon and Intel Macs in the same DMG. Install Python 3.10 or newer first. On first launch, choose a Vault and the integrations you want. The app is ad-hoc signed and not Apple-notarized; macOS may require Control-click → Open on first launch. See [the app guide](docs/app.md).
 
 **macOS / Linux command-line installer** (experimental: written to be portable and covered by the same tests, but not yet field-tested the way Windows is)
 

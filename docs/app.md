@@ -4,7 +4,7 @@ On Windows Hamzaban installs like an application: its own icon, an entry in the 
 **کجاست؟** ("where is it?") button. It tells you which application the chat took place in and which part of the chat to look at, and takes you there as far as that
 application allows.
 
-On macOS, Hamzaban comes as an application inside a DMG. It shows the same local control room in a native WebKit window and handles `hamzaban:` links. Linux uses the HTML file in the Vault.
+On macOS, Hamzaban comes as an application inside a DMG. Starting with version 1.1.1, the same DMG supports both Apple Silicon (arm64) and Intel (x86_64) Macs. It shows the same local control room in a native WebKit window and handles `hamzaban:` links. Linux uses the HTML file in the Vault.
 
 ## Installing the macOS app
 

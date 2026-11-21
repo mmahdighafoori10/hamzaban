@@ -28,6 +28,9 @@ Claude Code، Codex، ChatGPT، Gemini و بقیه هرکدام به شیوهٔ 
 
 ## نصب
 
+فایل DMG نسخهٔ ۱.۱.۱ و نسخه‌های بعدی هم روی مک‌های Apple Silicon و هم روی مک‌های Intel قابل نصب است.
+
+
 **Python ۳٫۱۰ یا جدیدتر** لازم است ([python.org](https://www.python.org/downloads/)؛ روی ویندوز تیک *Add python.exe to PATH* را بزن).
 
 **ویندوز** (هدف اصلی): پروژه را دانلود و از حالت زیپ خارج کن (دکمهٔ سبز **Code** ← *Download ZIP*) و روی **`INSTALL.cmd`** دوبار کلیک کن. می‌پرسد Vault کجا باشد و پیش از هر تغییر بیرون از آن اجازه می‌گیرد.

@@ -14,7 +14,7 @@ from pathlib import Path
 
 NAME = "Hamzaban"
 NAME_FA = "همزبان"
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 PACK_FORMAT = "hamzaban-pack"
 PACK_VERSION = 1
 CLOSE_MARKER = "hamzaban-close"
