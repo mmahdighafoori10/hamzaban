@@ -291,6 +291,6 @@ private final class HamzabanApp: NSObject, NSApplicationDelegate, WKNavigationDe
 }
 
 let app = NSApplication.shared
-let delegate = HamzabanApp()
+private let delegate = HamzabanApp()
 app.delegate = delegate
 app.run()
