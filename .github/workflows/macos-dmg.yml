@@ -24,7 +24,7 @@ jobs:
         run: |
           plutil -lint dist/Hamzaban.app/Contents/Info.plist
           lipo -archs dist/Hamzaban.app/Contents/MacOS/Hamzaban
-          lipo -verify_arch arm64 x86_64 dist/Hamzaban.app/Contents/MacOS/Hamzaban
+          lipo dist/Hamzaban.app/Contents/MacOS/Hamzaban -verify_arch arm64 x86_64
           codesign --verify --strict --verbose=2 dist/Hamzaban.app
           hdiutil verify dist/Hamzaban-*-macOS.dmg
       - uses: actions/upload-artifact@v4

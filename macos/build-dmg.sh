@@ -22,7 +22,7 @@ intel_binary="$output/.Hamzaban-x86_64"
 swiftc -O -target arm64-apple-macos12.0 -sdk "$sdk" -framework AppKit -framework WebKit "$repo/macos/HamzabanApp.swift" -o "$arm_binary"
 swiftc -O -target x86_64-apple-macos12.0 -sdk "$sdk" -framework AppKit -framework WebKit "$repo/macos/HamzabanApp.swift" -o "$intel_binary"
 lipo -create "$arm_binary" "$intel_binary" -output "$app/Contents/MacOS/Hamzaban"
-lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/Hamzaban"
+lipo "$app/Contents/MacOS/Hamzaban" -verify_arch arm64 x86_64
 rm -f "$arm_binary" "$intel_binary"
 ditto "$repo/engine" "$app/Contents/Resources/payload/engine"
 ditto "$repo/skills" "$app/Contents/Resources/payload/skills"
