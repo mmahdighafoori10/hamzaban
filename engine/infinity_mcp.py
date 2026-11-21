@@ -28,7 +28,7 @@ if str(HERE) not in sys.path:
 import handoff  # noqa: E402
 
 DEFAULT_PROTOCOL = "2025-06-18"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 MAX_LINE = 2_000_000
 MAX_READ_CHARS = 8000
 MAX_PENDING_FILES = 200
